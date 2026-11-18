@@ -675,7 +675,7 @@ body > #playerDock{display:none}
                 <option value="custom">Özel (OpenAI uyumlu)</option>
               </select>
             </div>
-            <div><label class="lbl">Model</label><input type="text" id="stModel" placeholder="gemini-2.0-flash"></div>
+            <div><label class="lbl">Model</label><input type="text" id="stModel" placeholder="gemini-3.8-flash"></div>
             <div><label class="lbl">API anahtarı</label><input type="password" id="stKey" placeholder="Anahtarını yapıştır" autocomplete="off"></div>
             <div><label class="lbl">Özel adres (yalnız "Özel" için)</label><input type="text" id="stBase" placeholder="https://.../v1/chat/completions"></div>
           </div>
@@ -864,7 +864,7 @@ const DEF = {
   color: "#ffffff", strokeColor: "#000000", stroke: 0, bg: 0, shadow: true,
   pos: "bottom", bottom: 8, width: 92, side: 4, align: "center", safe: false,
   showEn: true, order: "tr", enScale: 62, enOp: 92, enColor: "#b9c0d4", gap: 6,
-  engine: "ai", provider: "gemini", model: "gemini-2.0-flash", key: "", base: "",
+  engine: "ai", provider: "gemini", model: "gemini-3.8-flash", key: "", base: "",
   batch: 15, ctx: 3,
   hard: 2, mask: false, tone: "street",
   auto: true, dict: [],
@@ -879,6 +879,9 @@ try {
   const raw = localStorage.getItem(LS_SET);
   if (raw) CFG = Object.assign({}, DEF, JSON.parse(raw));
 } catch (e) { }
+/* Google eski model adlarını kaldırdıkça kayıtlı ayarı güncelle */
+const OLD_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.5-flash", "gemini-2.0-flash-exp"];
+if (CFG.provider === "gemini" && OLD_MODELS.includes((CFG.model || "").trim())) CFG.model = "gemini-3.8-flash";
 function saveCfg() { try { localStorage.setItem(LS_SET, JSON.stringify(CFG)); } catch (e) { } }
 
 /* ---------- durum ---------- */
@@ -1359,7 +1362,7 @@ function endpointOf() {
     default: return "";
   }
 }
-const DEF_MODEL = { gemini: "gemini-2.0-flash", openai: "gpt-4o-mini", openrouter: "openai/gpt-4o-mini", groq: "llama-3.3-70b-versatile", custom: "" };
+const DEF_MODEL = { gemini: "gemini-3.8-flash", openai: "gpt-4o-mini", openrouter: "openai/gpt-4o-mini", groq: "llama-3.3-70b-versatile", custom: "" };
 
 async function aiCall(sys, usr) {
   const key = (CFG.key || "").trim();
