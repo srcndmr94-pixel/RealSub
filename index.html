@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c14">
+<title>RealSub — Altyazını çevir</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%235B4DF5'/><path d='M25 20l20 12-20 12z' fill='white'/></svg>">
+<style>
+:root{
+  --bg:#080a12; --bg2:#0d1020; --panel:#141827; --panel2:#191e30; --panel3:#1f2437;
+  --line:#262c45; --line2:#333a57;
+  --txt:#f2f4fa; --muted:#98a0b8; --muted2:#6f778f;
+  --acc:#5b4df5; --acc2:#7c6cff; --acc-dim:rgba(91,77,245,.16); --acc-dim2:rgba(91,77,245,.32);
+  --ok:#2fbf71; --warn:#f0b429; --bad:#f2555a;
+  --r:16px; --r2:22px;
+  --sb:252px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0; background:
+    radial-gradient(1200px 700px at 78% -10%, rgba(91,77,245,.20), transparent 60%),
+    radial-gradient(900px 600px at 0% 100%, rgba(124,108,255,.10), transparent 60%),
+    linear-gradient(180deg,#090b14,#0b0e1b 40%,#080a12);
+  background-attachment:fixed;
+  color:var(--txt);
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5; overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#242a42;border-radius:20px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- SHELL ---------- */
+#app{display:flex;height:100vh;height:100dvh;overflow:hidden}
+.sidebar{
+  width:var(--sb); flex:0 0 var(--sb); padding:22px 14px; display:flex; flex-direction:column; gap:6px;
+  border-right:1px solid rgba(255,255,255,.05); background:linear-gradient(180deg,rgba(13,16,32,.75),rgba(8,10,18,.55));
+  backdrop-filter:blur(8px);
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 22px;font-size:25px;font-weight:800;letter-spacing:-.5px}
+.brand .mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#6b5cff,#4a3ae0);box-shadow:0 8px 22px rgba(91,77,245,.45)}
+.brand .mark svg{width:17px;height:17px;fill:#fff;margin-left:2px}
+.brand b{font-weight:800}
+.brand span{color:var(--acc2)}
+.navbtn{
+  display:flex;align-items:center;gap:13px;padding:12px 14px;border-radius:14px;color:var(--muted);
+  font-size:15px;font-weight:500;transition:.16s;width:100%;text-align:left
+}
+.navbtn svg{width:21px;height:21px;flex:0 0 21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.navbtn:hover{background:rgba(255,255,255,.04);color:#dfe3ef}
+.navbtn.on{background:linear-gradient(90deg,var(--acc-dim2),var(--acc-dim));color:#fff;font-weight:600;
+  box-shadow:inset 0 0 0 1px rgba(124,108,255,.25)}
+.navbtn.on svg{stroke:var(--acc2)}
+.sidefoot{color:#424a63;font-size:12.5px;line-height:1.45}
+.main{flex:1;min-width:0;overflow:auto;padding:28px 30px 60px;scroll-behavior:smooth}
+.view{display:none;animation:fade .25s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- BITS ---------- */
+h1.big{font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-1.4px;margin:0 0 10px}
+h1.big span{color:var(--acc2)}
+.sub{color:var(--muted);margin:0 0 24px;max-width:48ch;font-size:15.5px}
+h2{font-size:19px;font-weight:700;margin:0 0 14px;letter-spacing:-.3px}
+h3{font-size:14px;font-weight:700;margin:0 0 10px;color:#cdd3e4;letter-spacing:.2px}
+.card{background:linear-gradient(180deg,rgba(26,31,49,.92),rgba(18,22,36,.92));border:1px solid var(--line);
+  border-radius:var(--r2);padding:22px}
+.card.tight{padding:16px}
+.grid{display:grid;gap:18px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.lbl{font-size:13.5px;font-weight:600;color:#c3cadd;margin:0 0 7px;display:block}
+.hint{font-size:12.5px;color:var(--muted2);margin-top:7px;line-height:1.45}
+.sep{height:1px;background:var(--line);margin:18px 0}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;background:var(--panel3);
+  font-size:12px;font-weight:700;color:#c8cee0}
+.chip.acc{background:var(--acc);color:#fff}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--acc-dim2);color:#b9b0ff;font-weight:700}
+
+input[type=text],input[type=number],input[type=password],select,textarea{
+  width:100%;padding:13px 14px;border-radius:14px;background:#10131f;border:1px solid var(--line);
+  color:var(--txt);outline:none;transition:.15s
+}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-dim)}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2398a0b8' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;background-size:18px;padding-right:40px}
+textarea{resize:vertical;min-height:90px;line-height:1.55}
+input[type=range]{width:100%;accent-color:var(--acc);height:26px}
+input[type=color]{width:52px;height:42px;padding:3px;border-radius:12px;background:#10131f;border:1px solid var(--line)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:13px 22px;border-radius:14px;
+  background:var(--panel3);color:#e9ecf6;font-weight:600;transition:.16s;border:1px solid var(--line)}
+.btn:hover{background:#262c42;transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.btn.p{background:linear-gradient(135deg,#6a5bff,#4f3fe8);border-color:transparent;color:#fff;
+  box-shadow:0 10px 26px rgba(91,77,245,.35)}
+.btn.p:hover{box-shadow:0 14px 32px rgba(91,77,245,.45)}
+.btn.g{background:transparent}
+.btn.sm{padding:9px 14px;border-radius:11px;font-size:13.5px}
+.btn.lg{padding:16px 30px;font-size:16.5px;border-radius:16px}
+.btn.wide{width:100%}
+.btn.danger{color:#ff9a9d;border-color:rgba(242,85,90,.3)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0}
+.toggle .tt{font-size:14.5px;font-weight:600}
+.toggle .td{font-size:12.5px;color:var(--muted2);margin-top:3px;max-width:52ch}
+.sw{position:relative;width:50px;height:29px;flex:0 0 50px;border-radius:999px;background:#2a3047;transition:.18s;border:1px solid var(--line)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#8d95ad;transition:.18s}
+.sw.on{background:var(--acc);border-color:transparent}
+.sw.on::after{left:24px;background:#fff}
+
+.seg{display:flex;gap:4px;background:#10131f;border:1px solid var(--line);border-radius:14px;padding:4px;flex-wrap:wrap}
+.seg button{flex:1;min-width:84px;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--muted);transition:.15s}
+.seg button.on{background:var(--acc);color:#fff;box-shadow:0 6px 16px rgba(91,77,245,.3)}
+.seg button:not(.on):hover{color:#dfe3ef;background:rgba(255,255,255,.04)}
+
+.drop{border:2px dashed #2e3450;border-radius:18px;padding:30px 18px;text-align:center;color:var(--muted);
+  transition:.18s;background:rgba(255,255,255,.012);cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--acc);background:var(--acc-dim);color:#cfd4e6}
+.drop svg{width:44px;height:44px;stroke:#616b8d;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin-bottom:10px}
+.drop b{display:block;color:#e4e8f3;font-size:15px;font-weight:600;margin-bottom:4px}
+.drop small{color:var(--muted2);font-size:12.5px}
+
+/* ---------- HOME ---------- */
+.hero{display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1.15fr);gap:34px;align-items:center;
+  margin-bottom:30px}
+.hero .shot{border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(160deg,#17192c,#0e1020);box-shadow:0 30px 70px rgba(0,0,0,.5);position:relative;
+  aspect-ratio:16/9;display:grid;place-items:center}
+.hero .shot .demo{position:absolute;inset:0;background:
+  radial-gradient(60% 70% at 30% 35%, rgba(124,108,255,.25), transparent 70%),
+  linear-gradient(180deg,#1a1d33,#0b0d18)}
+.demoSubs{position:relative;z-index:2;text-align:center;padding:0 22px;width:100%}
+.demoSubs .tr{font-size:clamp(16px,2.2vw,24px);font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.8);margin-bottom:8px}
+.demoSubs .en{font-size:clamp(12px,1.5vw,16px);color:#aab1c7;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.demoSubs .tag{display:inline-block;margin-top:14px}
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.pcard{background:linear-gradient(180deg,#191d2f,#12152270);border:1px solid var(--line);border-radius:18px;
+  padding:15px;text-align:left;transition:.18s;position:relative;overflow:hidden}
+.pcard:hover{transform:translateY(-3px);border-color:var(--acc);box-shadow:0 16px 34px rgba(0,0,0,.4)}
+.pcard .kind{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--acc2)}
+.pcard .nm{font-weight:700;margin:7px 0 3px;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard .meta{font-size:12px;color:var(--muted2)}
+.pcard .x{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  color:#6e7793;opacity:0;transition:.15s}
+.pcard:hover .x{opacity:1}
+.pcard .x:hover{background:rgba(242,85,90,.15);color:#ff9a9d}
+.empty{padding:34px 18px;text-align:center;color:var(--muted2);border:1px dashed var(--line);border-radius:18px}
+
+/* ---------- PLAYER ---------- */
+.work{display:grid;grid-template-columns:minmax(320px,440px) minmax(320px,1fr);gap:22px;align-items:start}
+.work.editw{grid-template-columns:minmax(380px,1.25fr) minmax(300px,.85fr)}
+.editw .cueHead,.editw .cueRow{grid-template-columns:40px 96px 96px 1.15fr 1fr;gap:8px;padding:10px 12px}
+.editw .cueRow .tm{font-size:12px}
+.stage{border-radius:var(--r2);overflow:hidden;border:1px solid var(--line);background:#05070e;position:relative;
+  aspect-ratio:16/9;display:grid;place-items:center}
+.stage video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+.stage .noVid{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted2);
+  padding:20px;background:radial-gradient(70% 80% at 50% 40%,#171a2c,#07090f)}
+.stage.hasVid .noVid{display:none}
+
+/* subtitle overlay — tüm ayarlar CSS değişkeniyle */
+.subLayer{position:absolute;left:0;right:0;pointer-events:none;z-index:5;
+  display:flex;flex-direction:column;align-items:center;gap:var(--sGap,6px);
+  padding-left:var(--sSide,4%);padding-right:var(--sSide,4%)}
+.subLayer.bottom{bottom:var(--sBottom,8%);top:auto}
+.subLayer.top{top:var(--sBottom,8%);bottom:auto}
+.subLayer.mid{top:50%;transform:translateY(-50%)}
+.subLine{max-width:var(--sWidth,92%);text-align:center;white-space:pre-wrap;word-break:break-word;
+  font-family:var(--sFont,inherit);line-height:var(--sLine,1.3);letter-spacing:var(--sTrack,0px)}
+.subLine.tr{font-size:var(--sSize,28px);font-weight:var(--sWeight,700);color:var(--sColor,#fff);
+  text-shadow:var(--sShadow,0 2px 6px rgba(0,0,0,.9));
+  -webkit-text-stroke:var(--sStroke,0px) var(--sStrokeColor,#000);
+  background:var(--sBg,transparent);padding:var(--sPad,2px 10px);border-radius:var(--sRad,8px)}
+.subLine.en{font-size:calc(var(--sSize,28px) * var(--sEnScale,.62));font-weight:500;color:var(--sEnColor,#b9c0d4);
+  text-shadow:var(--sShadow,0 2px 6px rgba(0,0,0,.9));background:var(--sBg,transparent);
+  padding:var(--sPad,2px 10px);border-radius:var(--sRad,8px);opacity:var(--sEnOp,.92)}
+.subLayer.enFirst{flex-direction:column-reverse}
+.subLayer[data-align=left]{align-items:flex-start}
+.subLayer[data-align=right]{align-items:flex-end}
+.safeBox{position:absolute;pointer-events:none;z-index:4;border:1px dashed rgba(124,108,255,.55);border-radius:6px;
+  background:rgba(124,108,255,.07);display:none}
+.stage.showSafe .safeBox{display:block}
+
+.pbar{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);
+  border-top:0;border-radius:0 0 var(--r2) var(--r2);flex-wrap:wrap}
+.pbar .t{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:104px}
+.iconb{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#c9cfe2;transition:.15s;flex:0 0 40px}
+.iconb:hover{background:rgba(255,255,255,.07);color:#fff}
+.iconb.on{background:var(--acc-dim2);color:#bcb3ff}
+.iconb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.scrub{flex:1;min-width:140px}
+.stageWrap{position:relative}
+
+/* ---------- TABLE / CUES ---------- */
+.cueHead,.cueRow{display:grid;grid-template-columns:46px 108px 108px 1fr 1fr;gap:10px;align-items:center;
+  padding:11px 14px;font-size:14px}
+.cueHead{color:var(--muted2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  position:sticky;top:0;background:#12152280;backdrop-filter:blur(6px);z-index:2;border-bottom:1px solid var(--line)}
+.cueList{max-height:min(46vh,430px);overflow:auto;border:1px solid var(--line);border-radius:18px;background:#10131f}
+.cueRow{border-bottom:1px solid rgba(255,255,255,.035);cursor:pointer;transition:.12s}
+.cueRow:hover{background:rgba(255,255,255,.035)}
+.cueRow.on{background:linear-gradient(90deg,var(--acc),#4a3bdc);color:#fff;border-radius:12px}
+.cueRow.on .tm,.cueRow.on .trx{color:#e6e3ff}
+.cueRow .n{color:var(--muted2);font-variant-numeric:tabular-nums;font-size:13px}
+.cueRow.on .n{color:#d9d5ff}
+.cueRow .tm{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--muted)}
+.cueRow .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cueRow .trx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#aab2c9}
+.cueRow.dirty .n::after{content:"•";color:var(--acc2);margin-left:4px}
+.cueRow.flag{box-shadow:inset 3px 0 0 var(--warn)}
+.progWrap{height:7px;border-radius:999px;background:#1b2034;overflow:hidden;margin:12px 0 6px}
+.progWrap i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),#8a7cff);transition:width .25s}
+
+/* ---------- SETTINGS ---------- */
+.set2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.fieldrow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:9px 0}
+.fieldrow .v{font-variant-numeric:tabular-nums;color:var(--acc2);font-weight:700;font-size:13px;min-width:62px;text-align:right}
+.previewBox{position:relative;aspect-ratio:16/9;border-radius:18px;overflow:hidden;border:1px solid var(--line);
+  background:linear-gradient(160deg,#20233a,#0b0d16)}
+.previewBox .ph{position:absolute;inset:0;background:
+  radial-gradient(50% 60% at 65% 30%,rgba(255,180,120,.22),transparent 70%),
+  radial-gradient(60% 70% at 25% 60%,rgba(91,77,245,.25),transparent 70%)}
+.dictRow{display:grid;grid-template-columns:1fr 1fr 34px;gap:8px;margin-bottom:8px}
+.dictRow input{padding:10px 12px;border-radius:11px;font-size:13.5px}
+
+/* ---------- GAME MODE ---------- */
+.gameOverlay{position:fixed;inset:0;z-index:90;background:#000;display:none;flex-direction:column}
+.gameOverlay.on{display:flex}
+.gameOverlay .gtop{display:flex;gap:10px;align-items:center;padding:10px 14px;background:#0b0e18;flex-wrap:wrap}
+.gameOverlay .gbody{flex:1;position:relative;display:grid;place-items:center;background:#000}
+.gameOverlay.chroma .gbody{background:#00b140}
+.gameOverlay .gsubs{width:100%;text-align:center;padding:0 5%}
+
+/* ---------- MISC ---------- */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,24px);z-index:120;padding:13px 20px;border-radius:14px;
+  background:#1c2134;border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.5);opacity:0;transition:.22s;
+  font-size:14px;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.ok{border-color:rgba(47,191,113,.45)}
+.toast.bad{border-color:rgba(242,85,90,.45)}
+.modalBg{position:fixed;inset:0;background:rgba(5,6,12,.72);backdrop-filter:blur(5px);z-index:100;display:none;
+  align-items:center;justify-content:center;padding:18px}
+.modalBg.on{display:flex}
+.modal{width:min(560px,100%);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:22px;padding:24px}
+.mobileTop{display:none}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;
+  animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ---------- RESPONSIVE (telefon) ---------- */
+@media (max-width:1100px){
+  .work,.work.editw{grid-template-columns:1fr}
+  .hero{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  body{font-size:15px}
+  #app{flex-direction:column}
+  .sidebar{display:none}
+  .mobileTop{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);
+    background:rgba(10,12,22,.92);backdrop-filter:blur(10px);position:sticky;top:0;z-index:40}
+  .mobileTop .brand{padding:0;font-size:20px}
+  .mobileTop .brand .mark{width:30px;height:30px;border-radius:9px}
+  .main{padding:16px 14px 110px}
+  h1.big{font-size:31px;letter-spacing:-.8px}
+  .card{padding:16px;border-radius:18px}
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;background:rgba(12,15,26,.96);
+    backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.07);padding:7px 4px 
+    calc(7px + env(safe-area-inset-bottom))}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px;border-radius:12px;
+    color:var(--muted2);font-size:10.5px;font-weight:600}
+  .tabbar button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar button.on{color:#fff}
+  .tabbar button.on svg{stroke:var(--acc2)}
+  .cueHead,.cueRow,.editw .cueHead,.editw .cueRow{grid-template-columns:34px 1fr;gap:6px;padding:10px}
+  .cueHead .tm,.cueRow .tm{display:none}
+  .cueHead .trx{display:none}
+  .cueRow .tx{white-space:normal}
+  .cueRow .trx{white-space:normal;grid-column:2;color:#9aa3bd;font-size:13px}
+  .cueList{max-height:none}
+  .btn{padding:12px 16px}
+  .dictRow{grid-template-columns:1fr 1fr 30px}
+}
+.stageWrap{position:relative}
+body > #playerDock{display:none}
+.tabbar{display:none}
+@media (max-width:820px){.tabbar{display:flex}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ SOL MENÜ ============ -->
+  <aside class="sidebar">
+    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7z"/></svg></span><b>Real<span>Sub</span></b></div>
+    <button class="navbtn on" data-go="home"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/><path d="M9.5 20v-6h5v6"/></svg>Ana Sayfa</button>
+    <button class="navbtn" data-go="tr"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>Altyazı Çevirisi</button>
+    <button class="navbtn" data-go="edit"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M14.5 6.5l3 3"/></svg>Altyazı Düzenle</button>
+    <button class="navbtn" data-go="sync"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 3 10 3-8 2 3h5"/></svg>Senkronizasyon</button>
+    <button class="navbtn" data-go="game"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18.5 14h.01"/></svg>Oyun Modu</button>
+    <button class="navbtn" data-go="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-2.87 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 2.6 14H2.5a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9.5 2.6V2.5a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.87 1.2l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 21.4 9.5h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.2 1z"/></svg>Ayarlar</button>
+    <div class="sidefoot" style="margin-top:auto;font-size:12px;color:#454d66;line-height:1.5">
+      RealSub <span id="verTag">1.0</span><br>Sokak ağzına sadık çeviri
+    </div>
+  </aside>
+
+  <!-- ============ TELEFON ÜST BAR ============ -->
+  <div class="mobileTop">
+    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7z"/></svg></span><b>Real<span>Sub</span></b></div>
+    <div style="margin-left:auto" class="row">
+      <button class="iconb" id="mTopSave" title="Çalışmayı kaydet"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></button>
+    </div>
+  </div>
+
+  <main class="main" id="main">
+
+    <!-- ============ ANA SAYFA ============ -->
+    <section class="view on" id="v-home">
+      <div class="hero">
+        <div>
+          <h1 class="big">Altyazını <span>çevir</span></h1>
+          <p class="sub" style="font-size:18px;color:#c2c9dc;margin-bottom:6px">Video ve oyunlar</p>
+          <p class="sub">Film, dizi, çevrim içi video ve oyunların altyazılarını sokak ağzına ve küfüre sadık biçimde Türkçeye çevir.</p>
+          <div class="row">
+            <button class="btn p lg" data-go="tr"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>Başla</button>
+            <button class="btn lg g" data-go="set">Ayarlar</button>
+          </div>
+        </div>
+        <div>
+          <div class="shot">
+            <div class="demo"></div>
+            <div class="demoSubs">
+              <div class="tr">Daha parlak bir yarın bizi bekliyor.</div>
+              <div class="en">A brighter tomorrow awaits.</div>
+              <div class="tag"><span class="chip">EN</span> <span style="color:#6f778f">→</span> <span class="chip acc">TR</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:space-between;margin:26px 0 14px">
+        <h2 style="margin:0">Son projeler</h2>
+        <button class="btn sm" id="btnImportProj"><svg viewBox="0 0 24 24"><path d="M12 15V3m0 12l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Proje yükle</button>
+      </div>
+      <div class="projects" id="projList"></div>
+      <div class="empty" id="projEmpty" style="display:none">Henüz kayıtlı çalışma yok. Bir altyazı dosyası açıp çevirdiğinde burada görünür.</div>
+
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin-top:26px">
+        <div class="card tight"><h3>Sokak ağzı & küfür</h3><p class="hint" style="margin:0">Dört sertlik seviyesi, 200+ kalıplık yerleşik argo sözlüğü ve kendi sözlüğün. Çeviri yumuşatılmaz.</p></div>
+        <div class="card tight"><h3>Ekran alanı</h3><p class="hint" style="margin:0">Altyazının dikey konumu, genişliği, hizası ve güvenli alanı tek tek ayarlanır.</p></div>
+        <div class="card tight"><h3>Çift altyazı</h3><p class="hint" style="margin:0">Türkçe üstte, İngilizce altta. İngilizcenin boyutu ve saydamlığı ayrı ayarlanır.</p></div>
+        <div class="card tight"><h3>Çalışma kaydı</h3><p class="hint" style="margin:0">Her şey otomatik kaydedilir; projeyi .realsub dosyası olarak dışa aktarabilirsin.</p></div>
+      </div>
+    </section>
+
+    <!-- ============ ALTYAZI ÇEVİRİSİ ============ -->
+    <section class="view" id="v-tr">
+      <div class="work">
+        <div>
+          <h1 class="big">Altyazı <span>çevirisi</span></h1>
+          <p class="sub">Film, dizi, çevrim içi video ve oyun altyazılarını otomatik olarak çevirin.</p>
+
+          <div class="card">
+            <label class="lbl">Kaynak dil</label>
+            <select id="srcLang"></select>
+            <div style="text-align:center;margin:12px 0 10px">
+              <button class="iconb" id="btnSwap" title="Dilleri değiştir"><svg viewBox="0 0 24 24"><path d="M8 3v18m0-18L4.5 6.5M8 3l3.5 3.5"/><path d="M16 21V3m0 18l3.5-3.5M16 21l-3.5-3.5"/></svg></button>
+            </div>
+            <label class="lbl">Hedef dil</label>
+            <select id="tgtLang"></select>
+
+            <label class="lbl" style="margin-top:20px">Video veya oyun altyazısı ekle</label>
+            <div class="drop" id="dropSub">
+              <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
+              <b>Video veya oyun altyazısı ekle</b>
+              <small>SRT, ASS/SSA, VTT, SUB vb.</small>
+            </div>
+            <input type="file" id="fileSub" accept=".srt,.vtt,.ass,.ssa,.sub,.txt,.realsub,.json" hidden>
+            <div class="row" style="margin-top:10px">
+              <button class="btn sm" id="btnPasteSub"><svg viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>Metin yapıştır</button>
+              <button class="btn sm" id="btnAddVideo"><svg viewBox="0 0 24 24"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2.5"/></svg>Video ekle</button>
+              <input type="file" id="fileVid" accept="video/*,audio/*" hidden>
+            </div>
+            <div id="fileInfo" class="hint"></div>
+
+            <div class="progWrap" id="trProgWrap" style="display:none"><i id="trProg"></i></div>
+            <div class="hint" id="trProgTxt" style="display:none"></div>
+
+            <button class="btn p wide lg" id="btnTranslate" style="margin-top:16px" disabled>
+              <svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>Çeviriyi başlat</button>
+            <div class="row" style="margin-top:10px">
+              <button class="btn sm" id="btnStopTr" style="display:none">Durdur</button>
+              <button class="btn sm" id="btnRetryFails" style="display:none">Çevrilemeyenleri tekrar dene</button>
+            </div>
+            <div class="hint" id="engineNote"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="playerSlot" data-slot="tr"></div>
+          <div class="card" style="margin-top:18px">
+            <div class="row" style="justify-content:space-between;margin-bottom:12px">
+              <h2 style="margin:0">Satırlar <span class="badge" id="cueCount">0</span></h2>
+              <div class="row">
+                <button class="btn sm" id="btnExport"><svg viewBox="0 0 24 24"><path d="M12 3v12m0-12l4 4m-4-4L8 7"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Dışa aktar</button>
+              </div>
+            </div>
+            <div class="cueList" id="trListWrap">
+              <div class="cueHead"><div>#</div><div class="tm">Başlangıç</div><div class="tm">Bitiş</div><div>Altyazı Metni</div><div class="trx">Çeviri</div></div>
+              <div id="trList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ALTYAZI DÜZENLE ============ -->
+    <section class="view" id="v-edit">
+      <div class="work editw">
+        <div>
+          <h1 class="big">Altyazıyı <span>düzenle</span></h1>
+          <div class="card" style="padding:14px">
+            <div class="cueList" id="edListWrap">
+              <div class="cueHead"><div>#</div><div class="tm">Başlangıç</div><div class="tm">Bitiş</div><div>Altyazı Metni</div><div class="trx">Çeviri</div></div>
+              <div id="edList"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <label class="lbl">Altyazı metni (orijinal)</label>
+            <textarea id="edOrig" rows="2" placeholder="Satır seçin..."></textarea>
+            <label class="lbl" style="margin-top:14px">Çeviri (TR)</label>
+            <textarea id="edTr" rows="2" placeholder="Çeviri..."></textarea>
+            <div class="row" style="margin-top:8px">
+              <button class="btn sm" id="btnReTrOne"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></svg>Bu satırı yeniden çevir</button>
+              <button class="btn sm" id="btnFlag">İşaretle</button>
+              <span class="hint" id="edLenInfo" style="margin:0"></span>
+            </div>
+
+            <h3 style="margin-top:20px">Zamanlama</h3>
+            <div class="row" style="gap:10px">
+              <div style="flex:1;min-width:120px"><label class="lbl">Başlangıç</label><input type="text" id="edStart" placeholder="00:00:00,000"></div>
+              <div style="flex:1;min-width:120px"><label class="lbl">Bitiş</label><input type="text" id="edEnd" placeholder="00:00:00,000"></div>
+              <div style="flex:0 0 110px"><label class="lbl">Süre</label><input type="text" id="edDur" readonly></div>
+            </div>
+            <div class="row" style="margin-top:14px">
+              <button class="btn" id="btnSyncToVid"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>Videoyla senkronize et</button>
+              <button class="btn" id="btnPreviewCue"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>Önizleme</button>
+              <button class="btn p" id="btnSaveChanges"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Değişiklikleri kaydet</button>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn sm" id="btnAddCue">+ Satır ekle</button>
+              <button class="btn sm" id="btnSplitCue">Satırı böl</button>
+              <button class="btn sm" id="btnMergeCue">Alttakiyle birleştir</button>
+              <button class="btn sm danger" id="btnDelCue">Satırı sil</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="playerSlot" data-slot="edit"></div>
+          <div class="card" style="margin-top:18px">
+            <h3>Hızlı işlemler</h3>
+            <div class="row">
+              <button class="btn sm" id="btnFixOverlap">Çakışan süreleri düzelt</button>
+              <button class="btn sm" id="btnWrapLines">Uzun satırları böl</button>
+              <button class="btn sm" id="btnClearTags">Biçim etiketlerini temizle</button>
+            </div>
+            <div class="sep"></div>
+            <h3>Dışa aktar</h3>
+            <div class="row">
+              <button class="btn sm" data-exp="srt-tr">TR .srt</button>
+              <button class="btn sm" data-exp="srt-dual">Çift dilli .srt</button>
+              <button class="btn sm" data-exp="vtt-tr">TR .vtt</button>
+              <button class="btn sm" data-exp="ass-tr">TR .ass</button>
+              <button class="btn sm" data-exp="proj">.realsub projesi</button>
+            </div>
+            <p class="hint">Çift dilli dosyada Türkçe üstte, İngilizce altta yazılır — oynatıcıda da aynı şekilde görünür.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SENKRONİZASYON ============ -->
+    <section class="view" id="v-sync">
+      <h1 class="big">Senkro<span>nizasyon</span></h1>
+      <p class="sub">Altyazı videodan erken ya da geç geliyorsa buradan kaydır. Değişiklik anında önizlemede görünür.</p>
+      <div class="work">
+        <div class="card">
+          <h3>Kaydırma</h3>
+          <div class="fieldrow"><input type="range" id="synOff" min="-20000" max="20000" step="50" value="0"><span class="v" id="synOffV">0 ms</span></div>
+          <div class="row">
+            <button class="btn sm" data-nudge="-1000">-1 sn</button>
+            <button class="btn sm" data-nudge="-100">-100 ms</button>
+            <button class="btn sm" data-nudge="100">+100 ms</button>
+            <button class="btn sm" data-nudge="1000">+1 sn</button>
+            <button class="btn sm" data-nudge="0">Sıfırla</button>
+          </div>
+          <div class="toggle"><div><div class="tt">Sadece seçili satırdan itibaren</div><div class="td">Kapalıysa tüm altyazıya uygulanır.</div></div><div class="sw" id="synFrom"></div></div>
+          <button class="btn p wide" id="btnApplyOff">Kaydırmayı uygula</button>
+
+          <div class="sep"></div>
+          <h3>Hız / FPS dönüşümü</h3>
+          <p class="hint" style="margin-top:0">Altyazı giderek kayıyorsa (başta doğru, sonda bozuk) kare hızı farklıdır.</p>
+          <div class="row">
+            <div style="flex:1;min-width:120px"><label class="lbl">Kaynak FPS</label><input type="number" id="fpsA" value="23.976" step="0.001"></div>
+            <div style="flex:1;min-width:120px"><label class="lbl">Hedef FPS</label><input type="number" id="fpsB" value="25" step="0.001"></div>
+          </div>
+          <button class="btn wide" id="btnApplyFps" style="margin-top:12px">FPS dönüşümünü uygula</button>
+
+          <div class="sep"></div>
+          <h3>İki noktadan hizala</h3>
+          <p class="hint" style="margin-top:0">İlk ve son repliğin videodaki gerçek zamanını yaz; aradaki her şey orantılı düzeltilir.</p>
+          <div class="row">
+            <div style="flex:1;min-width:130px"><label class="lbl">1. satır gerçek zamanı</label><input type="text" id="anchor1" placeholder="00:00:42,000"></div>
+            <div style="flex:1;min-width:130px"><label class="lbl">Son satır gerçek zamanı</label><input type="text" id="anchor2" placeholder="01:38:12,000"></div>
+          </div>
+          <button class="btn wide" id="btnApplyAnchor" style="margin-top:12px">Hizala</button>
+        </div>
+        <div>
+          <div class="playerSlot" data-slot="sync"></div>
+          <div class="card" style="margin-top:18px">
+            <h3>Geçerli satır</h3>
+            <div id="synNow" class="hint" style="margin:0">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OYUN MODU ============ -->
+    <section class="view" id="v-game">
+      <h1 class="big">Oyun <span>modu</span></h1>
+      <p class="sub">Oyun altyazısını büyük, şeffaf bir katmanda göster; telefonu ya da tableti ikinci ekran olarak kullan. Anlık metin çevirisi de buradan.</p>
+      <div class="work">
+        <div class="card">
+          <h3>Anlık çeviri</h3>
+          <textarea id="gamePaste" rows="4" placeholder="Oyundaki İngilizce diyaloğu buraya yapıştır..."></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn p" id="btnGameTr"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Çevir</button>
+            <button class="btn sm" id="btnGameClear">Temizle</button>
+          </div>
+          <div id="gameOut" class="card tight" style="margin-top:14px;min-height:72px;background:#0e111c">
+            <div style="font-size:17px;font-weight:600" id="gameOutTr">—</div>
+            <div class="hint" id="gameOutEn"></div>
+          </div>
+
+          <div class="sep"></div>
+          <h3>Altyazı katmanı</h3>
+          <p class="hint" style="margin-top:0">Yüklü altyazıyı tam ekran katmanda oynatır. Oyundaki sahne başladığında <b>Başlat</b>'a bas; satırlar zamanına göre akar.</p>
+          <div class="row">
+            <button class="btn p" id="btnOpenOverlay"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 20h8"/></svg>Katmanı aç</button>
+            <button class="btn sm" id="btnChroma">Yeşil ekran (chroma)</button>
+          </div>
+          <p class="hint">Yeşil ekran modu, yayın yazılımında (OBS vb.) arka planı silip altyazıyı oyunun üstüne bindirmek içindir.</p>
+        </div>
+        <div class="card">
+          <h3>Kısayollar</h3>
+          <table style="width:100%;font-size:14px;border-collapse:collapse">
+            <tr><td style="padding:7px 0;color:var(--muted)">Boşluk</td><td>Oynat / duraklat</td></tr>
+            <tr><td style="padding:7px 0;color:var(--muted)">← / →</td><td>5 sn geri / ileri</td></tr>
+            <tr><td style="padding:7px 0;color:var(--muted)">↑ / ↓</td><td>Önceki / sonraki satır</td></tr>
+            <tr><td style="padding:7px 0;color:var(--muted)">, / .</td><td>Altyazıyı 100 ms kaydır</td></tr>
+            <tr><td style="padding:7px 0;color:var(--muted)">E</td><td>İngilizceyi göster / gizle</td></tr>
+            <tr><td style="padding:7px 0;color:var(--muted)">Esc</td><td>Katmanı kapat</td></tr>
+          </table>
+          <div class="sep"></div>
+          <h3>Nasıl kullanılır</h3>
+          <p class="hint" style="margin-top:0">1. Oyunun altyazı dosyasını (çoğu oyunda <i>.srt</i> ya da oyun klasöründeki dil dosyası) Çeviri ekranından yükle.<br>
+          2. Çevir, gerekirse Düzenle ekranında elden geçir.<br>
+          3. Burada katmanı aç, oyunu başlat, aynı anda oynat tuşuna bas.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AYARLAR ============ -->
+    <section class="view" id="v-set">
+      <h1 class="big">Ayar<span>lar</span></h1>
+      <div class="work">
+        <div>
+          <div class="card">
+            <h2>Yazı biçimi</h2>
+            <label class="lbl">Yazı tipi</label>
+            <select id="stFont">
+              <option value="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">Sistem (varsayılan)</option>
+              <option value="'Arial', Helvetica, sans-serif">Arial</option>
+              <option value="'Verdana', Geneva, sans-serif">Verdana</option>
+              <option value="'Tahoma', sans-serif">Tahoma</option>
+              <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+              <option value="'Segoe UI', sans-serif">Segoe UI</option>
+              <option value="'Roboto', sans-serif">Roboto</option>
+              <option value="Georgia, 'Times New Roman', serif">Georgia (serif)</option>
+              <option value="'Courier New', monospace">Courier New</option>
+              <option value="'Comic Sans MS', cursive">Comic Sans</option>
+            </select>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Yazı boyutu</label><input type="range" id="stSize" min="12" max="80" step="1"></div><span class="v" id="stSizeV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Kalınlık</label><input type="range" id="stWeight" min="400" max="900" step="100"></div><span class="v" id="stWeightV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Satır aralığı</label><input type="range" id="stLine" min="1" max="2" step="0.05"></div><span class="v" id="stLineV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Harf aralığı</label><input type="range" id="stTrack" min="-1" max="3" step="0.1"></div><span class="v" id="stTrackV"></span></div>
+            <div class="row" style="margin-top:6px">
+              <div><label class="lbl">Yazı rengi</label><input type="color" id="stColor"></div>
+              <div><label class="lbl">Kontur rengi</label><input type="color" id="stStrokeColor"></div>
+              <div style="flex:1;min-width:140px"><label class="lbl">Kontur kalınlığı</label><input type="range" id="stStroke" min="0" max="4" step="0.5"></div>
+            </div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Arka plan koyuluğu</label><input type="range" id="stBg" min="0" max="100" step="5"></div><span class="v" id="stBgV"></span></div>
+            <div class="toggle"><div><div class="tt">Gölge</div><div class="td">Açık zeminlerde okunurluğu artırır.</div></div><div class="sw on" id="stShadow"></div></div>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <h2>Altyazı ekran alanı</h2>
+            <label class="lbl">Konum</label>
+            <div class="seg" id="stPos">
+              <button data-v="bottom" class="on">Altta</button><button data-v="mid">Ortada</button><button data-v="top">Üstte</button>
+            </div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Kenardan uzaklık</label><input type="range" id="stBottom" min="0" max="45" step="1"></div><span class="v" id="stBottomV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Maksimum genişlik</label><input type="range" id="stWidth" min="40" max="100" step="1"></div><span class="v" id="stWidthV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Yan boşluk</label><input type="range" id="stSide" min="0" max="20" step="1"></div><span class="v" id="stSideV"></span></div>
+            <label class="lbl" style="margin-top:8px">Hizalama</label>
+            <div class="seg" id="stAlign">
+              <button data-v="left">Sol</button><button data-v="center" class="on">Orta</button><button data-v="right">Sağ</button>
+            </div>
+            <div class="toggle"><div><div class="tt">Güvenli alanı göster</div><div class="td">Altyazının taşmayacağı alanı önizlemede çerçeveyle gösterir.</div></div><div class="sw" id="stSafe"></div></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2>Önizleme</h2>
+            <div class="previewBox" id="prevBox">
+              <div class="ph"></div>
+              <div class="safeBox" id="prevSafe"></div>
+              <div class="subLayer" id="prevLayer">
+                <div class="subLine tr" id="prevTR">Siktir git, bu işte yokum.</div>
+                <div class="subLine en" id="prevEN">Screw you, I'm out.</div>
+              </div>
+            </div>
+            <p class="hint">Üstteki ayarlar anında buraya ve oynatıcıya yansır.</p>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <h2>Çift altyazı</h2>
+            <div class="toggle"><div><div class="tt">İngilizceyi de göster</div><div class="td">Türkçe üstte, İngilizce altta görünür.</div></div><div class="sw on" id="stShowEn"></div></div>
+            <label class="lbl">Sıralama</label>
+            <div class="seg" id="stOrder"><button data-v="tr" class="on">Türkçe üstte</button><button data-v="en">İngilizce üstte</button></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">İngilizce boyut oranı</label><input type="range" id="stEnScale" min="30" max="100" step="2"></div><span class="v" id="stEnScaleV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">İngilizce saydamlık</label><input type="range" id="stEnOp" min="20" max="100" step="5"></div><span class="v" id="stEnOpV"></span></div>
+            <div class="row"><div><label class="lbl">İngilizce rengi</label><input type="color" id="stEnColor"></div>
+              <div style="flex:1;min-width:140px"><label class="lbl">İki satır arası</label><input type="range" id="stGap" min="0" max="30" step="1"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- çeviri motoru -->
+      <div class="card" style="margin-top:18px">
+        <h2>Çeviri motoru</h2>
+        <div class="seg" id="stEngine" style="max-width:520px">
+          <button data-v="ai" class="on">Yapay zekâ (önerilen)</button><button data-v="fast">Hızlı / ücretsiz</button>
+        </div>
+        <p class="hint">Yapay zekâ motoru bağlamı görür, argoyu ve küfrü doğru karşılar. Hızlı motor anahtar istemez ama yüzeysel çevirir; sokak ağzı sözlüğü yine de uygulanır.</p>
+        <div id="aiBox">
+          <div class="set2" style="margin-top:14px">
+            <div>
+              <label class="lbl">Sağlayıcı</label>
+              <select id="stProvider">
+                <option value="gemini">Google Gemini (ücretsiz anahtar)</option>
+                <option value="openai">OpenAI</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="groq">Groq</option>
+                <option value="custom">Özel (OpenAI uyumlu)</option>
+              </select>
+            </div>
+            <div><label class="lbl">Model</label><input type="text" id="stModel" placeholder="gemini-2.0-flash"></div>
+            <div><label class="lbl">API anahtarı</label><input type="password" id="stKey" placeholder="Anahtarını yapıştır" autocomplete="off"></div>
+            <div><label class="lbl">Özel adres (yalnız "Özel" için)</label><input type="text" id="stBase" placeholder="https://.../v1/chat/completions"></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn sm" id="btnTestKey">Bağlantıyı test et</button>
+            <span class="hint" id="keyNote" style="margin:0">Anahtar yalnızca bu cihazda saklanır, hiçbir yere gönderilmez.</span>
+          </div>
+          <div class="set2" style="margin-top:14px">
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Grup başına satır</label><input type="range" id="stBatch" min="5" max="40" step="1"></div><span class="v" id="stBatchV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Bağlam satırı</label><input type="range" id="stCtx" min="0" max="8" step="1"></div><span class="v" id="stCtxV"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- sokak ağzı -->
+      <div class="card" style="margin-top:18px">
+        <h2>Sokak ağzı ve küfür</h2>
+        <label class="lbl">Sertlik seviyesi</label>
+        <div class="seg" id="stHard">
+          <button data-v="0">Yumuşak</button><button data-v="1">Doğal</button><button data-v="2" class="on">Sokak ağzı</button><button data-v="3">Tam sansürsüz</button>
+        </div>
+        <p class="hint" id="hardNote"></p>
+        <div class="toggle"><div><div class="tt">Küfrü yıldızla (f*ck gibi)</div><div class="td">Varsayılan kapalı — çeviri sansürlenmez.</div></div><div class="sw" id="stMask"></div></div>
+        <div class="toggle"><div><div class="tt">Ağız / üslup</div><div class="td">Çevirinin genel tonunu belirler.</div></div></div>
+        <div class="seg" id="stTone" style="max-width:620px">
+          <button data-v="neutral">Nötr</button><button data-v="street" class="on">Sokak</button><button data-v="young">Genç / internet</button><button data-v="military">Askeri / sert</button><button data-v="rural">Taşra</button>
+        </div>
+        <div class="sep"></div>
+        <div class="row" style="justify-content:space-between">
+          <h3 style="margin:0">Kendi sözlüğüm <span class="badge" id="dictCount">0</span></h3>
+          <div class="row">
+            <button class="btn sm" id="btnDictAdd">+ Ekle</button>
+            <button class="btn sm" id="btnDictShow">Yerleşik sözlüğü gör</button>
+          </div>
+        </div>
+        <p class="hint">Buraya yazdığın karşılıklar her şeyin üstündedir — yapay zekâya da kural olarak verilir.</p>
+        <div id="dictList" style="margin-top:10px"></div>
+      </div>
+
+      <!-- veri -->
+      <div class="card" style="margin-top:18px">
+        <h2>Çalışma kaydı</h2>
+        <div class="toggle"><div><div class="tt">Otomatik kaydet</div><div class="td">Her değişiklikten sonra çalışman bu cihaza kaydedilir.</div></div><div class="sw on" id="stAuto"></div></div>
+        <div class="row">
+          <button class="btn p" id="btnSaveProj"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Şimdi kaydet</button>
+          <button class="btn" id="btnExportProj">Projeyi dışa aktar</button>
+          <button class="btn" id="btnImportProj2">Proje yükle</button>
+          <button class="btn danger" id="btnWipe">Tüm kayıtları sil</button>
+        </div>
+        <p class="hint" id="storeNote"></p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ TELEFON ALT MENÜ ============ -->
+<nav class="tabbar">
+  <button data-go="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/></svg>Ana Sayfa</button>
+  <button data-go="tr"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>Çeviri</button>
+  <button data-go="edit"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg>Düzenle</button>
+  <button data-go="sync"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 3 10 3-8 2 3h5"/></svg>Senkron</button>
+  <button data-go="game"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3"/></svg>Oyun</button>
+  <button data-go="set"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2"/></svg>Ayarlar</button>
+</nav>
+
+<!-- ============ OYNATICI ============ -->
+<div id="playerDock">
+  <div class="stageWrap">
+    <div class="stage" id="stage">
+      <video id="vid" playsinline preload="metadata"></video>
+      <div class="noVid">
+        <div>
+          <div style="font-size:15px;color:#8e97b0;margin-bottom:8px">Video yok — altyazı yine de çalışır</div>
+          <button class="btn sm" id="btnAddVideo2">Video ekle</button>
+        </div>
+      </div>
+      <div class="safeBox" id="safeBox"></div>
+      <div class="subLayer bottom" id="subLayer">
+        <div class="subLine tr" id="subTR"></div>
+        <div class="subLine en" id="subEN"></div>
+      </div>
+    </div>
+    <div class="pbar">
+      <button class="iconb" id="btnPlay"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg></button>
+      <span class="t" id="timeTxt">00:00 / 00:00</span>
+      <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0">
+      <button class="iconb" id="btnMute"><svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+      <button class="iconb on" id="btnSubsOn" title="İngilizceyi göster/gizle"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 14h4M13 14h4"/></svg></button>
+      <button class="iconb" data-go="set" title="Altyazı ayarları"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M4 12h2M18 12h2M12 4v2M12 18v2"/></svg></button>
+      <button class="iconb" id="btnFull"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OYUN KATMANI ============ -->
+<div class="gameOverlay" id="gOverlay">
+  <div class="gtop">
+    <button class="btn sm p" id="gPlay">Başlat</button>
+    <button class="btn sm" id="gPrev">◀ Önceki</button>
+    <button class="btn sm" id="gNext">Sonraki ▶</button>
+    <span class="chip" id="gTime">00:00</span>
+    <span class="hint" style="margin:0" id="gInfo"></span>
+    <button class="btn sm" id="gClose" style="margin-left:auto">Kapat (Esc)</button>
+  </div>
+  <div class="gbody">
+    <div class="gsubs">
+      <div class="subLayer" id="gLayer" style="position:static;padding:0">
+        <div class="subLine tr" id="gTR"></div>
+        <div class="subLine en" id="gEN"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modalBg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileProj" accept=".realsub,.json" hidden>
+<script>
+"use strict";
+/* ===================================================================
+   RealSub 1.0 — altyazı çevirme / düzenleme / senkronizasyon
+   Tek dosya. Hiçbir sunucu yok; her şey tarayıcıda çalışır.
+   =================================================================== */
+
+/* ---------- kısayollar ---------- */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---------- zaman ---------- */
+function ms2tc(ms, sep) {
+  sep = sep || ",";
+  ms = Math.max(0, Math.round(ms));
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60, x = ms % 1000;
+  return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + sep + String(x).padStart(3, "0");
+}
+function ms2short(ms) {
+  ms = Math.max(0, Math.round(ms));
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : String(m)) + ":" + String(s).padStart(2, "0");
+}
+function tc2ms(t) {
+  if (t == null) return 0;
+  t = String(t).trim().replace(",", ".");
+  const m = t.match(/^(?:(\d+):)?(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (m) return (+(m[1] || 0)) * 3600000 + (+m[2]) * 60000 + Math.round(parseFloat(m[3]) * 1000);
+  const m2 = t.match(/^(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (m2) return (+m2[1]) * 60000 + Math.round(parseFloat(m2[2]) * 1000);
+  const n = parseFloat(t);
+  return isNaN(n) ? 0 : Math.round(n * 1000);
+}
+
+/* ---------- bildirim ---------- */
+let toastT;
+function toast(msg, kind) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = "toast on " + (kind || "");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { t.className = "toast " + (kind || ""); }, 2800);
+}
+function modal(html) {
+  $("#modal").innerHTML = html;
+  $("#modalBg").classList.add("on");
+}
+function closeModal() { $("#modalBg").classList.remove("on"); }
+$("#modalBg").addEventListener("click", e => { if (e.target.id === "modalBg") closeModal(); });
+
+/* ---------- diller ---------- */
+const LANGS = [
+  ["en", "İngilizce (EN)"], ["tr", "Türkçe (TR)"], ["de", "Almanca (DE)"], ["fr", "Fransızca (FR)"],
+  ["es", "İspanyolca (ES)"], ["it", "İtalyanca (IT)"], ["ru", "Rusça (RU)"], ["pt", "Portekizce (PT)"],
+  ["ja", "Japonca (JA)"], ["ko", "Korece (KO)"], ["zh", "Çince (ZH)"], ["ar", "Arapça (AR)"],
+  ["nl", "Hollandaca (NL)"], ["pl", "Lehçe (PL)"], ["sv", "İsveççe (SV)"], ["uk", "Ukraynaca (UK)"]
+];
+const LANGNAME = Object.fromEntries(LANGS.map(l => [l[0], l[1].replace(/\s*\(.+\)$/, "")]));
+
+/* ---------- ayarlar ---------- */
+const DEF = {
+  font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  size: 28, weight: 700, line: 1.3, track: 0,
+  color: "#ffffff", strokeColor: "#000000", stroke: 0, bg: 0, shadow: true,
+  pos: "bottom", bottom: 8, width: 92, side: 4, align: "center", safe: false,
+  showEn: true, order: "tr", enScale: 62, enOp: 92, enColor: "#b9c0d4", gap: 6,
+  engine: "ai", provider: "gemini", model: "gemini-2.0-flash", key: "", base: "",
+  batch: 15, ctx: 3,
+  hard: 2, mask: false, tone: "street",
+  auto: true, dict: [],
+  src: "en", tgt: "tr"
+};
+const LS_SET = "realsub.settings.v1";
+const LS_PRJ = "realsub.projects.v1";
+const LS_CUR = "realsub.current.v1";
+
+let CFG = Object.assign({}, DEF);
+try {
+  const raw = localStorage.getItem(LS_SET);
+  if (raw) CFG = Object.assign({}, DEF, JSON.parse(raw));
+} catch (e) { }
+function saveCfg() { try { localStorage.setItem(LS_SET, JSON.stringify(CFG)); } catch (e) { } }
+
+/* ---------- durum ---------- */
+const S = {
+  cues: [],          // {s,e,t,tr,flag}
+  name: "",          // dosya adı
+  kind: "Film",
+  projId: null,
+  sel: -1,
+  videoURL: null,
+  videoName: "",
+  busy: false,
+  stop: false,
+  offset: 0
+};
+
+/* ---------- görünüm yönlendirme ---------- */
+const VIEWS = ["home", "tr", "edit", "sync", "game", "set"];
+let curView = "home";
+function go(v) {
+  if (!VIEWS.includes(v)) v = "home";
+  curView = v;
+  $$(".view").forEach(n => n.classList.toggle("on", n.id === "v-" + v));
+  $$("[data-go]").forEach(n => n.classList.toggle("on", n.dataset.go === v));
+  const slot = $('.playerSlot[data-slot="' + v + '"]');
+  const dock = $("#playerDock");
+  if (slot && dock.parentNode !== slot) slot.appendChild(dock);
+  if (v === "edit") renderCues($("#edList"), true);
+  if (v === "tr") renderCues($("#trList"), false);
+  if (v === "set") { syncSettingsUI(); scaleSubs(); }
+  $("#main").scrollTop = 0;
+  try { location.hash = v; } catch (e) { }
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]");
+  if (b) { e.preventDefault(); go(b.dataset.go); }
+});
+</script>
+<script>
+"use strict";
+/* ===================== ALTYAZI OKUMA / YAZMA ===================== */
+
+function stripTags(s) {
+  return String(s)
+    .replace(/\{\\[^}]*\}/g, "")                 // ASS override
+    .replace(/<\/?[a-zA-Z][^>]*>/g, "")          // html/srt tag
+    .replace(/\\N|\\n/g, "\n")
+    .replace(/\r/g, "")
+    .trim();
+}
+
+function parseSRT(txt) {
+  const out = [];
+  const blocks = txt.replace(/\r\n?/g, "\n").replace(/^﻿/, "").split(/\n{2,}/);
+  for (const b of blocks) {
+    const lines = b.split("\n").filter(l => l.trim() !== "");
+    if (!lines.length) continue;
+    let i = 0;
+    if (/^\d+$/.test(lines[0].trim())) i = 1;
+    const tm = (lines[i] || "").match(/(\d{1,2}:\d{2}:\d{2}[.,]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[.,]\d{1,3})/);
+    if (!tm) continue;
+    const text = lines.slice(i + 1).join("\n");
+    out.push({ s: tc2ms(tm[1]), e: tc2ms(tm[2]), t: stripTags(text), tr: "", flag: false });
+  }
+  return out;
+}
+
+function parseVTT(txt) {
+  const out = [];
+  const body = txt.replace(/\r\n?/g, "\n").replace(/^﻿/, "").replace(/^WEBVTT[^\n]*\n/, "");
+  for (const b of body.split(/\n{2,}/)) {
+    const lines = b.split("\n").filter(l => l.trim() !== "");
+    if (!lines.length) continue;
+    const idx = lines.findIndex(l => /-->/.test(l));
+    if (idx < 0) continue;
+    const tm = lines[idx].match(/((?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{1,3})/);
+    if (!tm) continue;
+    out.push({ s: tc2ms(tm[1]), e: tc2ms(tm[2]), t: stripTags(lines.slice(idx + 1).join("\n")), tr: "", flag: false });
+  }
+  return out;
+}
+
+function parseASS(txt) {
+  const out = [];
+  const lines = txt.replace(/\r\n?/g, "\n").split("\n");
+  let fmt = null;
+  for (const ln of lines) {
+    if (/^Format:/i.test(ln) && fmt === null && /Start/i.test(ln))
+      fmt = ln.replace(/^Format:\s*/i, "").split(",").map(s => s.trim().toLowerCase());
+    if (!/^Dialogue:/i.test(ln)) continue;
+    const rest = ln.replace(/^Dialogue:\s*/i, "");
+    const f = fmt || ["layer", "start", "end", "style", "name", "marginl", "marginr", "marginv", "effect", "text"];
+    const n = f.length;
+    const parts = rest.split(",");
+    const head = parts.slice(0, n - 1), text = parts.slice(n - 1).join(",");
+    const gi = k => { const i = f.indexOf(k); return i < 0 ? "" : head[i] || ""; };
+    const s = gi("start"), e = gi("end");
+    if (!s || !e) continue;
+    const body = stripTags(text);
+    if (!body) continue;
+    out.push({ s: tc2ms(s), e: tc2ms(e), t: body, tr: "", flag: false });
+  }
+  return out;
+}
+
+function parseSUB(txt, fps) {
+  fps = fps || 23.976;
+  const out = [];
+  for (const ln of txt.replace(/\r\n?/g, "\n").split("\n")) {
+    const m = ln.match(/^\{(\d+)\}\{(\d+)\}(.*)$/);
+    if (!m) continue;
+    out.push({
+      s: Math.round(+m[1] / fps * 1000), e: Math.round(+m[2] / fps * 1000),
+      t: stripTags(m[3].replace(/\|/g, "\n")), tr: "", flag: false
+    });
+  }
+  return out;
+}
+
+/* düz metin → satır başına bir replik (oyun diyalogları için) */
+function parsePlain(txt, perLineMs) {
+  perLineMs = perLineMs || 2500;
+  const out = [];
+  let t = 0;
+  for (const ln of txt.replace(/\r\n?/g, "\n").split("\n")) {
+    const s = ln.trim();
+    if (!s) continue;
+    out.push({ s: t, e: t + perLineMs, t: s, tr: "", flag: false });
+    t += perLineMs + 150;
+  }
+  return out;
+}
+
+function parseAny(txt, name) {
+  const n = (name || "").toLowerCase();
+  let cues = [];
+  if (/\.(ass|ssa)$/.test(n) || /^\[Script Info\]/im.test(txt)) cues = parseASS(txt);
+  else if (/\.vtt$/.test(n) || /^WEBVTT/.test(txt.trim())) cues = parseVTT(txt);
+  else if (/\.sub$/.test(n) || /^\{\d+\}\{\d+\}/m.test(txt)) cues = parseSUB(txt);
+  else if (/-->/.test(txt)) cues = parseSRT(txt);
+  else cues = parsePlain(txt);
+  cues.sort((a, b) => a.s - b.s);
+  return cues;
+}
+
+/* ---------- dışa aktarma ---------- */
+function buildSRT(cues, mode) {
+  const L = [];
+  cues.forEach((c, i) => {
+    let body;
+    if (mode === "dual") body = (c.tr || c.t) + "\n" + (c.tr ? c.t : "");
+    else if (mode === "orig") body = c.t;
+    else body = c.tr || c.t;
+    L.push(String(i + 1), ms2tc(c.s) + " --> " + ms2tc(c.e), body.trim(), "");
+  });
+  return L.join("\n");
+}
+function buildVTT(cues, mode) {
+  const L = ["WEBVTT", ""];
+  cues.forEach(c => {
+    const body = mode === "dual" ? (c.tr || c.t) + "\n" + (c.tr ? c.t : "") : (mode === "orig" ? c.t : (c.tr || c.t));
+    L.push(ms2tc(c.s, ".") + " --> " + ms2tc(c.e, "."), body.trim(), "");
+  });
+  return L.join("\n");
+}
+function assTime(ms) {
+  ms = Math.max(0, Math.round(ms));
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60, cs = Math.floor((ms % 1000) / 10);
+  return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + "." + String(cs).padStart(2, "0");
+}
+function buildASS(cues, mode) {
+  const align = CFG.align === "left" ? 1 : CFG.align === "right" ? 3 : 2;
+  const vmargin = Math.round(CFG.bottom * 7.2);
+  const head = [
+    "[Script Info]", "Title: RealSub", "ScriptType: v4.00+", "WrapStyle: 0",
+    "PlayResX: 1920", "PlayResY: 1080", "ScaledBorderAndShadow: yes", "",
+    "[V4+ Styles]",
+    "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+    "Style: TR," + (CFG.font.split(",")[0].replace(/['"]/g, "") || "Arial") + "," + Math.round(CFG.size * 3) +
+    ",&H00FFFFFF,&H000000FF,&H00000000,&H64000000," + (CFG.weight >= 700 ? -1 : 0) +
+    ",0,0,0,100,100," + (CFG.track || 0) + ",0,1," + Math.max(1, CFG.stroke || 2) + ",1," + align + ",40,40," + vmargin + ",1",
+    "Style: EN," + (CFG.font.split(",")[0].replace(/['"]/g, "") || "Arial") + "," + Math.round(CFG.size * 3 * (CFG.enScale / 100)) +
+    ",&H00D4C0B9,&H000000FF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,1,2,1," + align + ",40,40," + Math.max(0, vmargin - 40) + ",1",
+    "", "[Events]",
+    "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+  ];
+  const ev = [];
+  cues.forEach(c => {
+    const tr = (c.tr || c.t).replace(/\n/g, "\\N");
+    ev.push("Dialogue: 0," + assTime(c.s) + "," + assTime(c.e) + ",TR,,0,0,0,," + tr);
+    if (mode === "dual" && c.tr) ev.push("Dialogue: 0," + assTime(c.s) + "," + assTime(c.e) + ",EN,,0,0,0,," + c.t.replace(/\n/g, "\\N"));
+  });
+  return head.concat(ev).join("\n");
+}
+function download(name, text, mime) {
+  const b = new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" });
+  const u = URL.createObjectURL(b);
+  const a = el("a"); a.href = u; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 4000);
+}
+function baseName() {
+  return (S.name || "altyazi").replace(/\.[a-z0-9]+$/i, "").replace(/[\\/:*?"<>|]/g, "_");
+}
+function doExport(kind) {
+  if (!S.cues.length) return toast("Önce bir altyazı dosyası yükle.", "bad");
+  const b = baseName();
+  if (kind === "srt-tr") download(b + ".tr.srt", buildSRT(S.cues, "tr"), "application/x-subrip");
+  else if (kind === "srt-dual") download(b + ".tr-en.srt", buildSRT(S.cues, "dual"), "application/x-subrip");
+  else if (kind === "vtt-tr") download(b + ".tr.vtt", buildVTT(S.cues, "tr"), "text/vtt");
+  else if (kind === "ass-tr") download(b + ".tr.ass", buildASS(S.cues, CFG.showEn ? "dual" : "tr"), "text/plain");
+  else if (kind === "proj") download(b + ".realsub", JSON.stringify(projectObject(), null, 1), "application/json");
+  toast("Dosya indirildi.", "ok");
+}
+</script>
+<script>
+"use strict";
+/* ===================================================================
+   SOKAK AĞZI / KÜFÜR SÖZLÜĞÜ
+   tr dizisi: [0]=yumuşak  [1]=doğal  [2]=sokak ağzı  [3]=tam sansürsüz
+   Altyazı çevirisinde tonun kaybolmaması için kullanılır.
+   =================================================================== */
+const SLANG = [
+/* --- kalıplar (önce uzun olanlar eşleşir) --- */
+["what the fuck|wtf|what the hell", "bu da ne|bu da ne böyle|bu ne lan|bu ne amına koyayım"],
+["shut the fuck up|stfu", "sessiz ol|kes sesini|kapa çeneni lan|kapa o lanet çeneni"],
+["get the fuck out|get the hell out", "çık dışarı|defol|siktir git buradan|siktir olup git"],
+["are you fucking kidding me|you gotta be kidding me|you've got to be kidding", "şaka mı bu|dalga mı geçiyorsun|benimle kafa mı buluyorsun|dalga mı geçiyorsun amına koyayım"],
+["i don't give a fuck|i don't give a shit|i couldn't care less", "umurumda değil|hiç umurumda değil|sikimde değil|sikimde bile değil"],
+["what the fuck are you doing|what are you doing", "ne yapıyorsun|ne yapıyorsun sen|ne halt ediyorsun lan|ne sikim iş yapıyorsun"],
+["fuck you|screw you|up yours", "canın cehenneme|defol|siktir git|siktir git amına koyayım"],
+["fuck off|piss off|bugger off", "git başımdan|çek git|siktir git|siktir ol git"],
+["fuck me|oh fuck|ah shit", "eyvah|hay aksi|hay sikeyim|sikeyim böyle işi"],
+["fuck it|screw it|to hell with it", "boş ver|neyse|siktir et|siktir et gitsin"],
+["fuck up|screwed up|messed up", "batırmak|işi batırmak|sıçmak|sıçıp batırmak"],
+["fucked up|all screwed up", "berbat|içler acısı|boktan|tam bir boktan iş"],
+["son of a bitch|sonofabitch|sob", "alçak|aşağılık herif|orospu çocuğu|orospu çocuğu"],
+["motherfucker|mofo", "aşağılık herif|şerefsiz|orospu çocuğu|anasını siktiğim"],
+["holy shit|holy crap|holy hell", "vay canına|inanmıyorum|hay sikeyim|hassiktir"],
+["bullshit|that's bullshit|bull", "saçmalık|zırvalık|zırva|saçmalık amına koyayım"],
+["no fucking way|no way in hell|no way", "imkânsız|asla|yok artık|yok amına koyayım"],
+["god damn it|goddammit|damn it|dammit", "lanet olsun|kahretsin|hay sıçayım|sikeyim böyle işi"],
+["for fuck's sake|for god's sake|for christ's sake", "yapma ya|Allah aşkına|hay Allah'ım ya|sikeyim ya"],
+["piece of shit|piece of crap", "beş para etmez|değersiz şey|boktan şey|boktan şey"],
+["kiss my ass|my ass", "hadi oradan|sen kime diyorsun|hadi oradan lan|götümü ye"],
+["pain in the ass|pain in the neck", "baş belası|baş belası|baş belası|götüme batan bir iş"],
+["badass|bad ass", "çok iyi|efsane|manyak iyi|manyak iyi"],
+["dumbass|dumb ass|jackass", "salak|aptal herif|geri zekâlı|götoş"],
+["smartass|wise guy", "ukala|bilmiş|ukala herif|ukala puşt"],
+["hard ass|tough guy", "sert adam|sert adam|kabadayı|kabadayı bozuntusu"],
+["shit happens", "olur böyle şeyler|olur öyle|boktan işler olur|sıçıldı işte"],
+["are you out of your mind|are you insane|are you nuts", "aklını mı kaçırdın|delirdin mi|kafayı mı yedin|kafayı mı yedin lan"],
+["back off|stay away", "geri çekil|uzak dur|çekil lan|siktir git"],
+["calm down|take it easy|chill out", "sakin ol|sakin ol|sakin ol kanka|sakin ol lan"],
+["come on|c'mon", "hadi|hadi ya|hadi be|hadi lan"],
+["give me a break", "yapma ya|bırak şu işi|bırak be|bırak şu işi lan"],
+["what's up|sup|what's going on", "ne haber|naber|ne var ne yok|naber lan"],
+["i'm screwed|i'm done for|i'm dead", "hapı yuttum|yandım|sıçtım|sıçtım batırdım"],
+["get out of here|get outta here", "defol|çık dışarı|bas git|siktir git"],
+["big deal|whoop-de-doo", "aman ne büyük iş|çok şey sanki|hadi oradan|sikimde değil"],
+["my bad|sorry about that", "benim hatam|kusura bakma|kusura bakma|benim hatam"],
+["hell yeah|damn right|fuck yeah", "kesinlikle|aynen öyle|hadi be|siktir evet"],
+["hell no|no chance", "asla|kesinlikle hayır|yok öyle bir şey|siktir et olmaz"],
+["what a mess|this is a mess", "ne karmaşa|tam bir karmaşa|ortalık boktan|ortalık bok çukuru"],
+["freaking|frigging|friggin|flipping", "lanet|kahrolası|kahrolası|lanet olası"],
+["screw this|forget this", "boş ver|yeter|siktir et|siktir et gitsin"],
+["you're dead|i'll kill you", "öldün sen|seni geberteceğim|seni geberteceğim|geberteceğim seni"],
+["take a hike|get lost", "çek arabanı|kaybol|siktir git|siktir ol git"],
+["shut up|be quiet|quiet", "sessiz ol|sus|kes sesini|kapa çeneni"],
+["oh my god|omg|oh god|jesus christ|jesus", "aman Tanrım|Allah'ım|hay Allah|Allah'ım ya"],
+["what the hell is this|what is this", "bu da ne|bu da ne böyle|bu ne lan|bu ne amına koyayım"],
+["not a chance", "mümkün değil|asla|yok öyle yağma|siktir et olmaz"],
+["i swear to god", "yemin ederim|yemin ederim|yemin ediyorum lan|yemin ederim amına koyayım"],
+["you son of a gun|you bastard", "seni gidi|seni alçak|seni piç|seni piç kurusu"],
+["beat it|scram", "yaylan|kaybol|bas git|siktir git"],
+["damn straight", "doğru|tabii ki|aynen öyle|siktir evet öyle"],
+["i'm out|count me out", "ben yokum|bu işte yokum|bu işte yokum|bu işte yokum lan"],
+["asking for it|you asked for it", "sen istedin|kendin istedin|sen istedin lan|kendin bok ettin"],
+["in deep shit|in trouble", "başı dertte|başı büyük belada|boku yemiş|boku yemiş"],
+["kick ass|kick some ass", "yerle bir etmek|hakkından gelmek|ağzını burnunu dağıtmak|götüne tekmeyi basmak"],
+["lose your shit|freak out", "çıldırmak|kontrolü kaybetmek|kafayı yemek|kafayı sikmek"],
+["talk shit|trash talk", "boş konuşmak|atıp tutmak|ağzını bozmak|bok atmak"],
+["don't fuck with me|don't mess with me", "benimle uğraşma|benimle uğraşma|benimle dalga geçme lan|benimle sikişme"],
+["fucking hell|bloody hell", "lanet olsun|kahretsin|hay sikeyim|sikeyim böyle hayatı"],
+["cut the crap", "saçmalamayı kes|boş yapma|zırvalamayı kes|boş yapma lan"],
+["i'm fucked|we're fucked", "hapı yuttum|işimiz bitti|sıçtık|sıçtık amına koyayım"],
+["hands off|back the hell off", "elini çek|uzak dur|çek elini lan|çek o lanet elini"],
+/* --- tek kelimeler --- */
+["fucking|fuckin|effing", "lanet|kahrolası|lanet olası|sikik"],
+["fuck", "lanet|kahretsin|siktir|sikeyim"],
+["shit", "bok|kahretsin|bok|sıçtık"],
+["shitty", "berbat|kötü|boktan|boktan"],
+["crap", "saçmalık|boş laf|zırva|bok"],
+["damn|damned", "lanet|kahrolası|lanet olası|lanet olası"],
+["hell", "cehennem|cehennem|cehennem|cehennem"],
+["bitch", "cadaloz|sürtük|kaltak|orospu"],
+["bastard", "alçak|şerefsiz|piç|piç kurusu"],
+["asshole|arsehole", "pislik|şerefsiz|göt herif|götveren"],
+["ass|arse", "kıç|kıç|göt|göt"],
+["dick|prick", "pislik|şerefsiz|yavşak|sikkafalı"],
+["cock", "pislik|herif|yavşak|sik kafalı"],
+["pussy", "korkak|ödlek|korkak tavuk|amcık ağızlı"],
+["slut|whore|hooker", "hafifmeşrep|sürtük|sürtük|orospu"],
+["idiot|moron|stupid", "aptal|salak|gerizekâlı|götoş"],
+["jerk|creep", "pislik|ahmak|yavşak|şerefsiz"],
+["scumbag|sleazebag", "aşağılık|pislik|şerefsiz|puşt"],
+["punk|thug", "serseri|külhanbeyi|kabadayı|puşt"],
+["loser", "zavallı|ezik|ezik|götlek"],
+["freak", "ucube|kaçık|manyak|sikik manyak"],
+["nuts|crazy|insane|mad", "deli|çılgın|manyak|kafayı sikmiş"],
+["weirdo", "tuhaf tip|garip herif|kaçık|sapık bozuntusu"],
+["coward", "korkak|ödlek|korkak|götü yemeyen"],
+["liar", "yalancı|yalancı|yalancı|yalancı puşt"],
+["snitch|rat", "muhbir|ispiyoncu|ispiyoncu|ispiyoncu puşt"],
+["boss|chief", "patron|patron|reis|reis"],
+["dude|man|bro|buddy|mate|pal", "dostum|ahbap|kanka|lan"],
+["guys|folks", "çocuklar|millet|millet|lan millet"],
+["kid|kiddo", "evlat|ufaklık|ufaklık|velet"],
+["cops|police", "polis|polis|aynasız|aynasız"],
+["money|cash|bucks", "para|para|mangır|mangır"],
+["drunk|wasted", "sarhoş|kafayı bulmuş|zom olmuş|küfelik olmuş"],
+["awesome|amazing", "harika|muhteşem|efsane|manyak iyi"],
+["cool", "güzel|iyi|iyi be|süper lan"],
+["whatever", "her neyse|boş ver|her neyse|sikimde değil"],
+["seriously", "cidden|gerçekten|cidden mi|cidden lan"],
+["actually", "aslında|aslında|aslında|aslında"],
+["nope", "hayır|yok|yok|yok lan"],
+["yeah|yep", "evet|evet|he ya|he lan"],
+["please", "lütfen|lütfen|ne olur|ne olursun"],
+["sorry", "üzgünüm|özür dilerim|kusura bakma|kusura bakma"],
+["thanks|thank you", "teşekkürler|sağ ol|eyvallah|eyvallah"],
+["hurry|hurry up", "acele et|çabuk ol|kıpırda|kıpırda lan"],
+["run", "koş|koş|kaç|kaç lan"],
+["move|move it", "yürü|kıpırda|kıpırda|kıpırda lan"],
+["careful|watch out|look out", "dikkat et|dikkat|dikkat lan|dikkat et lan"],
+["stop", "dur|dur|dur lan|dur lan"],
+["wait", "bekle|dur bakalım|dur hele|dur lan"],
+["help", "yardım et|yardım et|yetişin|imdat lan"],
+["swear", "yemin etmek|yemin etmek|yemin etmek|yemin etmek"],
+["gun|piece", "silah|silah|demir|demir"],
+["dead", "ölü|ölmüş|gitmiş|gebermiş"],
+["die", "ölmek|ölmek|gebermek|gebermek"],
+["kill", "öldürmek|öldürmek|haklamak|geberetmek"],
+["fight", "kavga|kavga|dalaş|dalaş"],
+["trouble", "sorun|bela|bela|bok"],
+["mess", "karmaşa|dağınıklık|rezalet|bok çukuru"],
+["weird", "garip|tuhaf|acayip|acayip"],
+["lame", "sıkıcı|zayıf|berbat|boktan"],
+["gross|disgusting", "iğrenç|mide bulandırıcı|iğrenç|bok gibi"],
+["tough", "zor|çetin|sert|dayanıklı"],
+["easy", "kolay|kolay|çocuk oyuncağı|çocuk oyuncağı"]
+];
+
+/* kullanıma hazır tablo (uzun kalıplar önce) */
+let DICT = [];
+function buildDict() {
+  const rows = [];
+  for (const [ens, trs] of SLANG) {
+    const tr = trs.split("|");
+    for (const e of ens.split("|")) rows.push({ en: e.trim(), tr, user: false });
+  }
+  for (const d of (CFG.dict || [])) {
+    if (!d || !d.en || !d.tr) continue;
+    rows.push({ en: String(d.en).trim().toLowerCase(), tr: [d.tr, d.tr, d.tr, d.tr], user: true });
+  }
+  rows.sort((a, b) => b.en.length - a.en.length);
+  DICT = rows.map(r => {
+    const esc = r.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const w = /^[a-z0-9' ]+$/i.test(r.en);
+    return { ...r, re: new RegExp(w ? "(^|[^\\p{L}\\p{N}])(" + esc + ")(?=$|[^\\p{L}\\p{N}])" : "(^|)(" + esc + ")", "giu") };
+  });
+}
+function pick(tr) { return tr[clamp(CFG.hard | 0, 0, 3)] || tr[tr.length - 1] || tr[0]; }
+
+/* metinde geçen sözlük kayıtlarını bul (AI'a kural olarak vermek için) */
+function dictHits(text) {
+  const out = [];
+  const low = " " + String(text).toLowerCase() + " ";
+  for (const d of DICT) {
+    if (low.includes(d.en)) { out.push(d); if (out.length > 14) break; }
+  }
+  return out;
+}
+
+/* hızlı motor için: kalıpları jetonla, çeviri sonrası Türkçesini koy */
+function protect(text) {
+  const map = [];
+  let out = String(text);
+  for (const d of DICT) {
+    out = out.replace(d.re, (m, p1) => {
+      const i = map.length;
+      map.push(pick(d.tr));
+      return p1 + "⸤" + i + "⸥";
+    });
+  }
+  return { out, map };
+}
+function restore(text, map) {
+  return String(text).replace(/⸤\s*(\d+)\s*⸥/g, (m, i) => map[+i] != null ? map[+i] : "");
+}
+function maskProfanity(s) {
+  if (!CFG.mask) return s;
+  const bad = ["sik", "amına", "orospu", "piç", "göt", "bok", "yarrak", "amcık", "siktir", "sikeyim"];
+  return String(s).replace(/\p{L}+/gu, w => {
+    const l = w.toLocaleLowerCase("tr");
+    return bad.some(b => l.startsWith(b)) && w.length > 2 ? w[0] + "*".repeat(w.length - 1) : w;
+  });
+}
+function tidy(s) {
+  return String(s).replace(/[ \t]+/g, " ").replace(/\s+\n/g, "\n").replace(/\n\s+/g, "\n")
+    .replace(/\s+([,.!?;:])/g, "$1").trim();
+}
+buildDict();
+</script>
+<script>
+"use strict";
+/* ===================== ÇEVİRİ MOTORLARI ===================== */
+
+const HARD_RULES = [
+  "Küfürleri yumuşat, argoyu sadeleştir; aile ortamında izlenebilir bir dil kullan.",
+  "Doğal konuşma Türkçesi kullan. Küfürleri ölçülü ama gerçek karşılığıyla ver, tamamen silme.",
+  "SOKAK AĞZI kullan. Küfür, argo ve hakaret neyse odur: yumuşatma, kibarlaştırma, sansürleme. 'fuck' kelimesini 'kahretsin' diye geçiştirme; bağlama göre gerçek karşılığını yaz.",
+  "HİÇBİR ŞEYİ YUMUŞATMA. En sert, en doğrudan Türkçe karşılığı kullan. Küfür tam karşılanır, hiçbir kelime yıldızlanmaz veya kısaltılmaz."
+];
+const TONE_RULES = {
+  neutral: "Üslup nötr ve akıcı olsun.",
+  street: "Üslup sokak ağzı olsun: kısa, sert, günlük konuşma. 'lan', 'be', 'ya' gibi doğal ekler yerinde kullanılır.",
+  young: "Üslup genç/internet dili olsun: kısa, esprili, güncel argo.",
+  military: "Üslup askeri ve sert olsun: emir kipi, kısa cümle, telsiz ağzı.",
+  rural: "Üslup taşra ağzı olsun: samimi, yöresel deyimler, devrik cümleler."
+};
+
+function sysPrompt(src, tgt) {
+  const hits = [];
+  const seen = new Set();
+  for (const d of DICT) if (d.user && !seen.has(d.en)) { seen.add(d.en); hits.push(d.en + " = " + d.tr[0]); }
+  return [
+    "Sen deneyimli bir altyazı çevirmenisin. " + (LANGNAME[src] || src) + " altyazıyı " + (LANGNAME[tgt] || tgt) + " diline çeviriyorsun.",
+    "",
+    "KURALLAR:",
+    "1. " + HARD_RULES[clamp(CFG.hard | 0, 0, 3)],
+    "2. " + (TONE_RULES[CFG.tone] || TONE_RULES.street),
+    "3. Kelimesi kelimesine değil; o repliği Türkçe konuşan biri nasıl söylerdi, öyle çevir.",
+    "4. Altyazı kısalığına uy: satır başına en çok 42 karakter, en çok 2 satır. Gerekirse kısalt ama anlamı koru.",
+    "5. Özel isimler, marka, yer ve oyun terimleri çevrilmez.",
+    "6. Seslenme ve küfür cümlenin doğal yerine konur; Türkçede kulağa yapay gelen birebir aktarım yapma.",
+    "7. Önceki ve sonraki repliklere bakarak kim kime ne diyor onu anla; tekil/çoğul ve senli benli/sizli hitabı buna göre seç.",
+    "8. Açıklama, not, tırnak veya numara ekleme. Sadece çeviriyi ver.",
+    hits.length ? "9. ZORUNLU KARŞILIKLAR (kullanıcı sözlüğü, hepsine uy): " + hits.slice(0, 40).join(" ; ") : "",
+    "",
+    "ÇIKTI BİÇİMİ: Sadece geçerli JSON nesnesi döndür. Anahtar = satır numarası (metin), değer = çeviri.",
+    'Örnek: {"12":"Siktir git.","13":"Burada kalamazsın."}'
+  ].filter(Boolean).join("\n");
+}
+
+function userPrompt(batch, before, after) {
+  const L = [];
+  if (before.length) L.push("ÖNCEKİ REPLİKLER (bağlam, çevirme):", ...before.map(c => "- " + c.t.replace(/\n/g, " ")), "");
+  L.push("ÇEVİRİLECEK SATIRLAR:");
+  batch.forEach(c => L.push(c.n + ". " + c.t.replace(/\n/g, " ")));
+  if (after.length) L.push("", "SONRAKİ REPLİKLER (bağlam, çevirme):", ...after.map(c => "- " + c.t.replace(/\n/g, " ")));
+  const extra = [];
+  for (const c of batch) for (const d of dictHits(c.t)) if (!d.user) extra.push(d.en + " → " + pick(d.tr));
+  if (extra.length) {
+    const uniq = Array.from(new Set(extra)).slice(0, 18);
+    L.push("", "ÖNERİLEN KARŞILIKLAR (bağlam uyarsa kullan): " + uniq.join(" ; "));
+  }
+  L.push("", "Sadece JSON döndür.");
+  return L.join("\n");
+}
+
+function endpointOf() {
+  switch (CFG.provider) {
+    case "openai": return "https://api.openai.com/v1/chat/completions";
+    case "openrouter": return "https://openrouter.ai/api/v1/chat/completions";
+    case "groq": return "https://api.groq.com/openai/v1/chat/completions";
+    case "custom": return (CFG.base || "").trim();
+    default: return "";
+  }
+}
+const DEF_MODEL = { gemini: "gemini-2.0-flash", openai: "gpt-4o-mini", openrouter: "openai/gpt-4o-mini", groq: "llama-3.3-70b-versatile", custom: "" };
+
+async function aiCall(sys, usr) {
+  const key = (CFG.key || "").trim();
+  if (!key && CFG.provider !== "custom") throw new Error("API anahtarı girilmemiş (Ayarlar → Çeviri motoru).");
+  const model = (CFG.model || DEF_MODEL[CFG.provider] || "").trim();
+
+  if (CFG.provider === "gemini") {
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) +
+      ":generateContent?key=" + encodeURIComponent(key);
+    const body = {
+      systemInstruction: { parts: [{ text: sys }] },
+      contents: [{ role: "user", parts: [{ text: usr }] }],
+      generationConfig: { temperature: 0.7, topP: 0.95, responseMimeType: "application/json", maxOutputTokens: 8192 },
+      safetySettings: ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
+        .map(c => ({ category: c, threshold: "BLOCK_NONE" }))
+    };
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j.error && j.error.message) || ("Gemini hatası " + r.status));
+    const cand = (j.candidates || [])[0];
+    if (!cand) throw new Error("Model yanıt vermedi (içerik engellenmiş olabilir).");
+    return ((cand.content && cand.content.parts) || []).map(p => p.text || "").join("");
+  }
+
+  const url = endpointOf();
+  if (!url) throw new Error("Özel adres boş (Ayarlar → Çeviri motoru).");
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+    body: JSON.stringify({
+      model, temperature: 0.7,
+      messages: [{ role: "system", content: sys }, { role: "user", content: usr }],
+      response_format: { type: "json_object" }
+    })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j.error && j.error.message) || ("Sunucu hatası " + r.status));
+  return (((j.choices || [])[0] || {}).message || {}).content || "";
+}
+
+function parseJSONish(s) {
+  if (!s) return null;
+  let t = String(s).trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try { return JSON.parse(t); } catch (e) { }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { } }
+  const out = {};
+  const re = /"(\d+)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  let m, got = false;
+  while ((m = re.exec(t))) { out[m[1]] = m[2].replace(/\\"/g, '"').replace(/\\n/g, "\n"); got = true; }
+  return got ? out : null;
+}
+
+/* ---------- hızlı (ücretsiz) motor ---------- */
+async function fastOne(text, src, tgt) {
+  const p = protect(text);
+  let res = "";
+  try {
+    const u = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" + src + "&tl=" + tgt +
+      "&dt=t&q=" + encodeURIComponent(p.out);
+    const r = await fetch(u);
+    if (r.ok) {
+      const j = await r.json();
+      res = (j[0] || []).map(x => x[0]).join("");
+    }
+  } catch (e) { }
+  if (!res) {
+    const u2 = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(p.out.slice(0, 480)) +
+      "&langpair=" + src + "|" + tgt;
+    const r2 = await fetch(u2);
+    const j2 = await r2.json();
+    res = (j2 && j2.responseData && j2.responseData.translatedText) || "";
+    if (/MYMEMORY WARNING|INVALID/i.test(res)) res = "";
+  }
+  if (!res) throw new Error("Çeviri servisine ulaşılamadı.");
+  return tidy(maskProfanity(restore(res, p.map)));
+}
+
+/* ---------- ana çeviri akışı ---------- */
+async function translateAll() {
+  if (S.busy) return;
+  if (!S.cues.length) return toast("Önce bir altyazı dosyası yükle.", "bad");
+  const src = CFG.src, tgt = CFG.tgt;
+  if (src === tgt) return toast("Kaynak ve hedef dil aynı.", "bad");
+
+  S.busy = true; S.stop = false;
+  $("#btnTranslate").disabled = true;
+  $("#btnStopTr").style.display = "";
+  $("#trProgWrap").style.display = "";
+  $("#trProgTxt").style.display = "";
+  let done = 0, fail = 0;
+  const total = S.cues.length;
+  const upd = () => {
+    $("#trProg").style.width = (done / total * 100).toFixed(1) + "%";
+    $("#trProgTxt").textContent = done + " / " + total + " satır" + (fail ? " — " + fail + " satır çevrilemedi" : "");
+  };
+  upd();
+
+  try {
+    if (CFG.engine === "fast") {
+      const CONC = 4;
+      let idx = 0;
+      const worker = async () => {
+        while (idx < S.cues.length && !S.stop) {
+          const i = idx++;
+          const c = S.cues[i];
+          if (c.tr) { done++; upd(); continue; }
+          try { c.tr = await fastOne(c.t, src, tgt); }
+          catch (e) { fail++; c.flag = true; }
+          done++;
+          if (done % 6 === 0) { renderCues($("#trList"), false); autosave(); }
+          upd();
+          await sleep(90);
+        }
+      };
+      await Promise.all(Array.from({ length: CONC }, worker));
+    } else {
+      const B = clamp(CFG.batch | 0, 3, 40), C = clamp(CFG.ctx | 0, 0, 8);
+      const sys = sysPrompt(src, tgt);
+      for (let i = 0; i < S.cues.length && !S.stop; i += B) {
+        const batch = [];
+        for (let k = i; k < Math.min(i + B, S.cues.length); k++) batch.push({ n: k + 1, t: S.cues[k].t, i: k });
+        const before = S.cues.slice(Math.max(0, i - C), i);
+        const after = S.cues.slice(i + batch.length, i + batch.length + C);
+        let ok = false;
+        for (let attempt = 0; attempt < 2 && !ok && !S.stop; attempt++) {
+          try {
+            const raw = await aiCall(sys, userPrompt(batch, before, after));
+            const obj = parseJSONish(raw);
+            if (!obj) throw new Error("Yanıt okunamadı.");
+            for (const b of batch) {
+              const v = obj[String(b.n)] != null ? obj[String(b.n)] : obj[b.n];
+              if (v) S.cues[b.i].tr = tidy(maskProfanity(String(v)));
+              else { S.cues[b.i].flag = true; fail++; }
+            }
+            ok = true;
+          } catch (e) {
+            if (attempt === 1) {
+              fail += batch.length;
+              batch.forEach(b => S.cues[b.i].flag = true);
+              if (/anahtar|API|401|403/i.test(e.message)) { S.stop = true; toast(e.message, "bad"); }
+            } else await sleep(900);
+          }
+        }
+        done = Math.min(i + batch.length, total);
+        upd();
+        renderCues($("#trList"), false);
+        autosave();
+        await sleep(120);
+      }
+    }
+  } finally {
+    S.busy = false;
+    $("#btnTranslate").disabled = false;
+    $("#btnStopTr").style.display = "none";
+    $("#btnRetryFails").style.display = fail ? "" : "none";
+    renderCues($("#trList"), false);
+    renderCues($("#edList"), true);
+    autosave();
+    paintSubs(true);
+    toast(S.stop ? "Durduruldu." : (fail ? "Bitti — " + fail + " satır çevrilemedi." : "Çeviri tamam."), fail ? "bad" : "ok");
+  }
+}
+
+async function retryFailed() {
+  const left = S.cues.filter(c => !c.tr);
+  if (!left.length) { $("#btnRetryFails").style.display = "none"; return toast("Çevrilmemiş satır yok.", "ok"); }
+  S.cues.forEach(c => { if (!c.tr) c.flag = false; });
+  await translateAll();
+}
+
+async function translateOne(i) {
+  const c = S.cues[i];
+  if (!c) return;
+  try {
+    if (CFG.engine === "fast") c.tr = await fastOne(c.t, CFG.src, CFG.tgt);
+    else {
+      const before = S.cues.slice(Math.max(0, i - 2), i), after = S.cues.slice(i + 1, i + 3);
+      const raw = await aiCall(sysPrompt(CFG.src, CFG.tgt), userPrompt([{ n: i + 1, t: c.t, i }], before, after));
+      const obj = parseJSONish(raw);
+      if (obj && (obj[String(i + 1)] || obj[i + 1])) c.tr = tidy(maskProfanity(String(obj[String(i + 1)] || obj[i + 1])));
+      else throw new Error("Yanıt okunamadı.");
+    }
+    c.flag = false;
+    selectCue(i);
+    renderCues($("#edList"), true); renderCues($("#trList"), false);
+    autosave(); paintSubs(true);
+    toast("Satır çevrildi.", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+</script>
+<script>
+"use strict";
+/* ===================== GÖRÜNÜM / OYNATICI ===================== */
+
+const vid = $("#vid"), stage = $("#stage"), subLayer = $("#subLayer"),
+      subTR = $("#subTR"), subEN = $("#subEN");
+
+function applyStyle() {
+  const r = document.documentElement.style;
+  r.setProperty("--sFont", CFG.font);
+  r.setProperty("--sWeight", CFG.weight);
+  r.setProperty("--sLine", CFG.line);
+  r.setProperty("--sTrack", CFG.track + "px");
+  r.setProperty("--sColor", CFG.color);
+  r.setProperty("--sStroke", CFG.stroke + "px");
+  r.setProperty("--sStrokeColor", CFG.strokeColor);
+  r.setProperty("--sShadow", CFG.shadow ? "0 2px 6px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.9)" : "none");
+  r.setProperty("--sBg", CFG.bg > 0 ? "rgba(0,0,0," + (CFG.bg / 100).toFixed(2) + ")" : "transparent");
+  r.setProperty("--sPad", CFG.bg > 0 ? ".12em .5em" : "0");
+  r.setProperty("--sRad", "8px");
+  r.setProperty("--sWidth", CFG.width + "%");
+  r.setProperty("--sSide", CFG.side + "%");
+  r.setProperty("--sBottom", CFG.bottom + "%");
+  r.setProperty("--sGap", CFG.gap + "px");
+  r.setProperty("--sEnScale", (CFG.enScale / 100).toFixed(2));
+  r.setProperty("--sEnOp", (CFG.enOp / 100).toFixed(2));
+  r.setProperty("--sEnColor", CFG.enColor);
+
+  [subLayer, $("#prevLayer"), $("#gLayer")].forEach(L => {
+    if (!L) return;
+    L.classList.remove("bottom", "mid", "top");
+    if (L !== $("#gLayer")) L.classList.add(CFG.pos);
+    L.classList.toggle("enFirst", CFG.order === "en");
+    L.dataset.align = CFG.align;
+  });
+  stage.classList.toggle("showSafe", !!CFG.safe);
+  $("#prevBox").classList.toggle("showSafe", !!CFG.safe);
+  [["#safeBox", "#stage"], ["#prevSafe", "#prevBox"]].forEach(([a]) => {
+    const n = $(a); if (!n) return;
+    n.style.left = CFG.side + "%"; n.style.right = CFG.side + "%";
+    n.style.height = "26%";
+    if (CFG.pos === "top") { n.style.top = CFG.bottom + "%"; n.style.bottom = "auto"; }
+    else if (CFG.pos === "mid") { n.style.top = "37%"; n.style.bottom = "auto"; }
+    else { n.style.bottom = CFG.bottom + "%"; n.style.top = "auto"; }
+  });
+  scaleSubs();
+  paintSubs(true);
+}
+function scaleSubs() {
+  const pairs = [[stage, subLayer], [$("#prevBox"), $("#prevLayer")], [$("#gOverlay") && $("#gOverlay").querySelector(".gbody"), $("#gLayer")]];
+  for (const [box, layer] of pairs) {
+    if (!box || !layer) continue;
+    const h = box.clientHeight || 360;
+    layer.style.setProperty("--sSize", Math.max(9, h * CFG.size / 360).toFixed(1) + "px");
+  }
+}
+window.addEventListener("resize", scaleSubs);
+
+/* ---------- aktif satır ---------- */
+let lastCue = -1;
+function curTimeMs() { return (vid.currentTime || 0) * 1000; }
+function cueAt(ms) {
+  const off = S.offset || 0;
+  for (let i = 0; i < S.cues.length; i++) {
+    const c = S.cues[i];
+    if (ms >= c.s + off && ms <= c.e + off) return i;
+    if (c.s + off > ms) break;
+  }
+  return -1;
+}
+function paintSubs(force) {
+  let i = S.cues.length ? cueAt(curTimeMs()) : -1;
+  if (i < 0 && !vid.src && S.sel >= 0) i = S.sel;   // video yoksa seçili satırı göster
+  if (i === lastCue && !force) return;
+  lastCue = i;
+  const c = i >= 0 ? S.cues[i] : null;
+  const showEn = CFG.showEn;
+  subTR.textContent = c ? (c.tr || c.t) : "";
+  subEN.textContent = c && showEn && c.tr ? c.t : "";
+  subTR.style.display = subTR.textContent ? "" : "none";
+  subEN.style.display = subEN.textContent ? "" : "none";
+  if ($("#gOverlay").classList.contains("on")) {
+    $("#gTR").textContent = subTR.textContent;
+    $("#gEN").textContent = subEN.textContent;
+    $("#gTR").style.display = subTR.style.display;
+    $("#gEN").style.display = subEN.style.display;
+  }
+  if (c && curView === "sync") $("#synNow").textContent = "#" + (i + 1) + "  " + ms2tc(c.s + (S.offset || 0)) + " → " + (c.tr || c.t);
+}
+
+/* ---------- oynatıcı ---------- */
+let scrubbing = false;
+function fmtTime() {
+  const d = vid.duration && isFinite(vid.duration) ? vid.duration * 1000 : 0;
+  $("#timeTxt").textContent = ms2short(curTimeMs()) + " / " + ms2short(d);
+}
+vid.addEventListener("timeupdate", () => {
+  paintSubs();
+  fmtTime();
+  if (!scrubbing && vid.duration) $("#scrub").value = String(Math.round(vid.currentTime / vid.duration * 1000));
+});
+vid.addEventListener("loadedmetadata", () => { fmtTime(); scaleSubs(); });
+vid.addEventListener("play", () => setPlayIcon(true));
+vid.addEventListener("pause", () => setPlayIcon(false));
+function setPlayIcon(playing) {
+  $("#btnPlay").innerHTML = playing
+    ? '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></svg>'
+    : '<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>';
+}
+$("#btnPlay").onclick = () => { if (!vid.src) return toast("Önce video ekle.", "bad"); vid.paused ? vid.play() : vid.pause(); };
+$("#btnMute").onclick = () => { vid.muted = !vid.muted; $("#btnMute").classList.toggle("on", vid.muted); };
+$("#btnSubsOn").onclick = () => { CFG.showEn = !CFG.showEn; saveCfg(); $("#btnSubsOn").classList.toggle("on", CFG.showEn); syncSettingsUI(); paintSubs(true); };
+$("#btnFull").onclick = () => {
+  const w = stage.closest(".stageWrap");
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (w.requestFullscreen) w.requestFullscreen();
+};
+document.addEventListener("fullscreenchange", scaleSubs);
+$("#scrub").addEventListener("input", e => {
+  scrubbing = true;
+  if (vid.duration) { vid.currentTime = (+e.target.value) / 1000 * vid.duration; paintSubs(true); }
+});
+$("#scrub").addEventListener("change", () => { scrubbing = false; });
+
+/* ---------- satır listesi ---------- */
+function renderCues(box, withTr) {
+  if (!box) return;
+  if (!S.cues.length) { box.innerHTML = '<div class="empty" style="border:0">Altyazı yüklenmedi.</div>'; return; }
+  const MAX = 600;
+  const frag = document.createDocumentFragment();
+  const n = Math.min(S.cues.length, MAX);
+  for (let i = 0; i < n; i++) {
+    const c = S.cues[i];
+    const row = el("div", "cueRow" + (i === S.sel ? " on" : "") + (c.flag ? " flag" : ""));
+    row.dataset.i = i;
+    row.innerHTML = '<div class="n">' + (i + 1) + '</div>' +
+      '<div class="tm">' + ms2tc(c.s) + '</div>' +
+      '<div class="tm">' + ms2tc(c.e) + '</div>' +
+      '<div class="tx">' + esc(c.t.replace(/\n/g, " ")) + '</div>' +
+      '<div class="trx">' + esc((c.tr || "").replace(/\n/g, " ")) + '</div>';
+    frag.appendChild(row);
+  }
+  box.innerHTML = "";
+  box.appendChild(frag);
+  if (S.cues.length > MAX) {
+    const more = el("div", "empty", "İlk " + MAX + " satır gösteriliyor (toplam " + S.cues.length + "). Düzenlemek için satır ara.");
+    more.style.border = "0";
+    box.appendChild(more);
+  }
+  $("#cueCount").textContent = S.cues.length;
+}
+document.addEventListener("click", e => {
+  const r = e.target.closest(".cueRow");
+  if (!r) return;
+  selectCue(+r.dataset.i);
+  if (vid.src) { vid.currentTime = (S.cues[S.sel].s + (S.offset || 0)) / 1000; }
+  paintSubs(true);
+});
+function selectCue(i) {
+  S.sel = clamp(i, -1, S.cues.length - 1);
+  $$(".cueRow").forEach(r => r.classList.toggle("on", +r.dataset.i === S.sel));
+  const c = S.cues[S.sel];
+  if (!c) return;
+  $("#edOrig").value = c.t;
+  $("#edTr").value = c.tr || "";
+  $("#edStart").value = ms2tc(c.s);
+  $("#edEnd").value = ms2tc(c.e);
+  $("#edDur").value = ((c.e - c.s) / 1000).toFixed(3) + " sn";
+  updLenInfo();
+  const row = $$('.cueRow[data-i="' + S.sel + '"]')[0];
+  if (row && row.scrollIntoView) row.scrollIntoView({ block: "nearest" });
+}
+function updLenInfo() {
+  const t = $("#edTr").value || "";
+  const lines = t.split("\n");
+  const longest = Math.max(0, ...lines.map(l => l.length));
+  $("#edLenInfo").textContent = lines.length + " satır · en uzun " + longest + " karakter" + (longest > 42 ? " (uzun)" : "");
+}
+$("#edTr").addEventListener("input", updLenInfo);
+
+/* ---------- dosya yükleme ---------- */
+function loadSubText(txt, name) {
+  const cues = parseAny(txt, name);
+  if (!cues.length) return toast("Bu dosyada altyazı bulunamadı.", "bad");
+  S.cues = cues; S.name = name || "altyazi.srt"; S.sel = 0; S.offset = 0;
+  S.projId = S.projId || ("p" + Date.now().toString(36));
+  $("#fileInfo").textContent = S.name + " · " + cues.length + " satır · " +
+    ms2short(cues[cues.length - 1].e) + " uzunluk";
+  $("#btnTranslate").disabled = false;
+  renderCues($("#trList"), false); renderCues($("#edList"), true);
+  selectCue(0); paintSubs(true); autosave();
+  toast(cues.length + " satır yüklendi.", "ok");
+}
+function readFile(f) {
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const txt = String(fr.result || "");
+    if (/\.realsub$|\.json$/i.test(f.name)) {
+      try { loadProjectObject(JSON.parse(txt)); return; } catch (e) { }
+    }
+    loadSubText(txt, f.name);
+  };
+  fr.readAsText(f, "utf-8");
+}
+$("#dropSub").onclick = () => $("#fileSub").click();
+$("#fileSub").onchange = e => readFile(e.target.files[0]);
+["dragover", "dragleave", "drop"].forEach(ev => {
+  $("#dropSub").addEventListener(ev, e => {
+    e.preventDefault();
+    $("#dropSub").classList.toggle("over", ev === "dragover");
+    if (ev === "drop" && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+  });
+});
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => {
+  e.preventDefault();
+  const f = e.dataTransfer && e.dataTransfer.files[0];
+  if (!f) return;
+  if (/^video|^audio/.test(f.type)) setVideo(f); else readFile(f);
+});
+function setVideo(f) {
+  if (S.videoURL) URL.revokeObjectURL(S.videoURL);
+  S.videoURL = URL.createObjectURL(f);
+  S.videoName = f.name;
+  vid.src = S.videoURL;
+  stage.classList.add("hasVid");
+  toast("Video eklendi: " + f.name, "ok");
+}
+$("#btnAddVideo").onclick = $("#btnAddVideo2").onclick = () => $("#fileVid").click();
+$("#fileVid").onchange = e => { if (e.target.files[0]) setVideo(e.target.files[0]); };
+$("#btnPasteSub").onclick = () => {
+  modal('<h2>Metin yapıştır</h2><p class="hint">SRT/VTT içeriğini ya da düz diyalog listesini yapıştır. Düz metinde her satır ayrı replik olur.</p>' +
+    '<textarea id="pasteBox" rows="10" placeholder="1\n00:00:01,000 --> 00:00:03,000\nHello there..."></textarea>' +
+    '<div class="row" style="margin-top:14px"><button class="btn p" id="pasteOk">Yükle</button><button class="btn" onclick="closeModal()">Vazgeç</button></div>');
+  $("#pasteOk").onclick = () => {
+    const t = $("#pasteBox").value.trim();
+    if (!t) return;
+    closeModal();
+    loadSubText(t, "yapistirilan.srt");
+  };
+};
+$("#btnExport").onclick = () => {
+  modal('<h2>Dışa aktar</h2><div class="row" style="flex-direction:column;align-items:stretch;gap:8px">' +
+    '<button class="btn" data-exp="srt-tr">Türkçe .srt</button>' +
+    '<button class="btn" data-exp="srt-dual">Çift dilli .srt (TR + EN)</button>' +
+    '<button class="btn" data-exp="vtt-tr">Türkçe .vtt</button>' +
+    '<button class="btn" data-exp="ass-tr">Türkçe .ass (biçimli)</button>' +
+    '<button class="btn" data-exp="proj">.realsub projesi</button></div>' +
+    '<div class="row" style="margin-top:14px"><button class="btn g" onclick="closeModal()">Kapat</button></div>');
+};
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-exp]");
+  if (!b) return;
+  doExport(b.dataset.exp);
+  closeModal();
+});
+
+/* ---------- proje / çalışma kaydı ---------- */
+function projectObject() {
+  return {
+    v: 1, id: S.projId || ("p" + Date.now().toString(36)), name: S.name || "Adsız",
+    kind: S.kind, src: CFG.src, tgt: CFG.tgt, savedAt: Date.now(),
+    cues: S.cues.map(c => ({ s: c.s, e: c.e, t: c.t, tr: c.tr || "", flag: !!c.flag }))
+  };
+}
+function readProjects() {
+  try { return JSON.parse(localStorage.getItem(LS_PRJ) || "[]"); } catch (e) { return []; }
+}
+function writeProjects(list) {
+  try { localStorage.setItem(LS_PRJ, JSON.stringify(list)); return true; }
+  catch (e) { toast("Kayıt alanı dolu. Eski projeleri sil.", "bad"); return false; }
+}
+function saveProject(quiet) {
+  if (!S.cues.length) { if (!quiet) toast("Kaydedilecek altyazı yok.", "bad"); return; }
+  S.projId = S.projId || ("p" + Date.now().toString(36));
+  const o = projectObject();
+  const list = readProjects().filter(p => p.id !== o.id);
+  list.unshift(o);
+  while (list.length > 24) list.pop();
+  if (writeProjects(list) && !quiet) toast("Çalışma kaydedildi.", "ok");
+  renderProjects();
+}
+let autoT;
+function autosave() {
+  if (!CFG.auto) return;
+  clearTimeout(autoT);
+  autoT = setTimeout(() => saveProject(true), 900);
+}
+function loadProjectObject(o) {
+  if (!o || !o.cues) return toast("Dosya okunamadı.", "bad");
+  S.cues = o.cues.map(c => ({ s: +c.s, e: +c.e, t: c.t || "", tr: c.tr || "", flag: !!c.flag }));
+  S.name = o.name || "proje"; S.kind = o.kind || "Film"; S.projId = o.id || null; S.sel = 0; S.offset = 0;
+  if (o.src) CFG.src = o.src;
+  if (o.tgt) CFG.tgt = o.tgt;
+  $("#srcLang").value = CFG.src; $("#tgtLang").value = CFG.tgt;
+  $("#fileInfo").textContent = S.name + " · " + S.cues.length + " satır";
+  $("#btnTranslate").disabled = false;
+  renderCues($("#trList"), false); renderCues($("#edList"), true);
+  selectCue(0); paintSubs(true);
+  go("edit");
+  toast("Proje yüklendi: " + S.name, "ok");
+}
+function renderProjects() {
+  const list = readProjects();
+  const box = $("#projList");
+  box.innerHTML = "";
+  $("#projEmpty").style.display = list.length ? "none" : "";
+  for (const p of list) {
+    const done = p.cues.filter(c => c.tr).length;
+    const card = el("button", "pcard");
+    card.innerHTML = '<div class="kind">' + esc(p.kind || "Film") + '</div>' +
+      '<div class="nm">' + esc(p.name) + '</div>' +
+      '<div class="meta">' + p.cues.length + ' satır · %' + Math.round(done / Math.max(1, p.cues.length) * 100) + ' çevrildi<br>' +
+      new Date(p.savedAt).toLocaleString("tr-TR") + '</div>' +
+      '<span class="x" data-del="' + p.id + '">✕</span>';
+    card.onclick = ev => {
+      if (ev.target.dataset.del) {
+        writeProjects(readProjects().filter(x => x.id !== ev.target.dataset.del));
+        renderProjects(); toast("Silindi.");
+        return;
+      }
+      loadProjectObject(p);
+    };
+    box.appendChild(card);
+  }
+  const used = (localStorage.getItem(LS_PRJ) || "").length;
+  const n = $("#storeNote");
+  if (n) n.textContent = list.length + " kayıtlı proje · yaklaşık " + (used / 1024).toFixed(0) + " KB yer kaplıyor.";
+}
+$("#btnSaveProj").onclick = $("#mTopSave").onclick = () => saveProject(false);
+$("#btnExportProj").onclick = () => doExport("proj");
+$("#btnImportProj").onclick = $("#btnImportProj2").onclick = () => $("#fileProj").click();
+$("#fileProj").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { try { loadProjectObject(JSON.parse(String(fr.result))); } catch (x) { toast("Geçersiz proje dosyası.", "bad"); } };
+  fr.readAsText(f, "utf-8");
+};
+$("#btnWipe").onclick = () => {
+  modal('<h2>Tüm kayıtlar silinsin mi?</h2><p class="hint">Kayıtlı projelerin hepsi bu cihazdan silinir. Geri alınamaz.</p>' +
+    '<div class="row" style="margin-top:14px"><button class="btn danger" id="wipeYes">Evet, sil</button><button class="btn" onclick="closeModal()">Vazgeç</button></div>');
+  $("#wipeYes").onclick = () => { localStorage.removeItem(LS_PRJ); renderProjects(); closeModal(); toast("Silindi."); };
+};
+</script>
+<script>
+"use strict";
+/* ===================== DÜZENLEME ===================== */
+function curCue() { return S.cues[S.sel]; }
+$("#btnSaveChanges").onclick = () => {
+  const c = curCue(); if (!c) return toast("Önce satır seç.", "bad");
+  c.t = $("#edOrig").value;
+  c.tr = $("#edTr").value;
+  const s = tc2ms($("#edStart").value), e = tc2ms($("#edEnd").value);
+  if (e > s) { c.s = s; c.e = e; } else toast("Bitiş, başlangıçtan büyük olmalı.", "bad");
+  renderCues($("#edList"), true); renderCues($("#trList"), false);
+  selectCue(S.sel); paintSubs(true); saveProject(false);
+};
+$("#btnSyncToVid").onclick = () => {
+  const c = curCue(); if (!c) return;
+  if (!vid.src) return toast("Önce video ekle.", "bad");
+  const t = Math.round(curTimeMs());
+  const d = c.e - c.s;
+  c.s = t; c.e = t + d;
+  selectCue(S.sel); renderCues($("#edList"), true); autosave();
+  toast("Satır videoya hizalandı.", "ok");
+};
+$("#btnPreviewCue").onclick = () => {
+  const c = curCue(); if (!c) return;
+  if (vid.src) { vid.currentTime = Math.max(0, (c.s + (S.offset || 0)) / 1000); vid.play(); }
+  else paintSubs(true);
+};
+$("#btnFlag").onclick = () => { const c = curCue(); if (!c) return; c.flag = !c.flag; renderCues($("#edList"), true); };
+$("#btnReTrOne").onclick = () => { if (S.sel >= 0) translateOne(S.sel); };
+$("#btnAddCue").onclick = () => {
+  const i = Math.max(0, S.sel);
+  const prev = S.cues[i];
+  const s = prev ? prev.e + 50 : 0;
+  S.cues.splice(i + 1, 0, { s, e: s + 2000, t: "", tr: "", flag: false });
+  renderCues($("#edList"), true); selectCue(i + 1); autosave();
+};
+$("#btnDelCue").onclick = () => {
+  if (S.sel < 0) return;
+  S.cues.splice(S.sel, 1);
+  renderCues($("#edList"), true); renderCues($("#trList"), false);
+  selectCue(Math.min(S.sel, S.cues.length - 1)); autosave();
+};
+$("#btnMergeCue").onclick = () => {
+  const i = S.sel, a = S.cues[i], b = S.cues[i + 1];
+  if (!a || !b) return toast("Birleştirilecek alt satır yok.", "bad");
+  a.t = (a.t + " " + b.t).trim();
+  a.tr = ((a.tr || "") + " " + (b.tr || "")).trim();
+  a.e = b.e;
+  S.cues.splice(i + 1, 1);
+  renderCues($("#edList"), true); selectCue(i); autosave();
+};
+$("#btnSplitCue").onclick = () => {
+  const c = curCue(); if (!c) return;
+  const mid = Math.round((c.s + c.e) / 2);
+  const half = t => { const p = t.split(/\s+/); return [p.slice(0, Math.ceil(p.length / 2)).join(" "), p.slice(Math.ceil(p.length / 2)).join(" ")]; };
+  const [t1, t2] = half(c.t), [r1, r2] = half(c.tr || "");
+  const nb = { s: mid + 1, e: c.e, t: t2, tr: r2, flag: false };
+  c.e = mid; c.t = t1; c.tr = r1;
+  S.cues.splice(S.sel + 1, 0, nb);
+  renderCues($("#edList"), true); selectCue(S.sel); autosave();
+};
+$("#btnFixOverlap").onclick = () => {
+  let n = 0;
+  for (let i = 0; i < S.cues.length - 1; i++) {
+    if (S.cues[i].e > S.cues[i + 1].s) { S.cues[i].e = Math.max(S.cues[i].s + 300, S.cues[i + 1].s - 40); n++; }
+  }
+  renderCues($("#edList"), true); autosave();
+  toast(n + " satırın süresi düzeltildi.", "ok");
+};
+$("#btnWrapLines").onclick = () => {
+  let n = 0;
+  for (const c of S.cues) {
+    const t = (c.tr || "").replace(/\n/g, " ").trim();
+    if (t.length > 42 && t.length <= 90) {
+      const w = t.split(" ");
+      let a = "", b = "";
+      for (const x of w) (a.length + x.length <= Math.ceil(t.length / 2) ? a += (a ? " " : "") + x : b += (b ? " " : "") + x);
+      c.tr = a + "\n" + b; n++;
+    }
+  }
+  renderCues($("#edList"), true); selectCue(S.sel); autosave();
+  toast(n + " satır iki satıra bölündü.", "ok");
+};
+$("#btnClearTags").onclick = () => {
+  for (const c of S.cues) { c.t = stripTags(c.t); c.tr = stripTags(c.tr || ""); }
+  renderCues($("#edList"), true); selectCue(S.sel); autosave();
+  toast("Biçim etiketleri temizlendi.", "ok");
+};
+
+/* ===================== SENKRONİZASYON ===================== */
+function setOff(v) {
+  S.offset = clamp(Math.round(v), -600000, 600000);
+  $("#synOff").value = String(clamp(S.offset, -20000, 20000));
+  $("#synOffV").textContent = (S.offset > 0 ? "+" : "") + S.offset + " ms";
+  paintSubs(true);
+}
+$("#synOff").oninput = e => setOff(+e.target.value);
+$$("[data-nudge]").forEach(b => b.onclick = () => {
+  const n = +b.dataset.nudge;
+  setOff(n === 0 ? 0 : S.offset + n);
+});
+$("#synFrom").onclick = () => $("#synFrom").classList.toggle("on");
+$("#btnApplyOff").onclick = () => {
+  if (!S.cues.length) return;
+  const from = $("#synFrom").classList.contains("on") ? Math.max(0, S.sel) : 0;
+  for (let i = from; i < S.cues.length; i++) { S.cues[i].s += S.offset; S.cues[i].e += S.offset; }
+  S.cues.forEach(c => { c.s = Math.max(0, c.s); c.e = Math.max(c.s + 100, c.e); });
+  toast((S.offset > 0 ? "+" : "") + S.offset + " ms uygulandı.", "ok");
+  setOff(0);
+  renderCues($("#edList"), true); renderCues($("#trList"), false); autosave();
+};
+$("#btnApplyFps").onclick = () => {
+  const a = parseFloat($("#fpsA").value), b = parseFloat($("#fpsB").value);
+  if (!a || !b) return toast("FPS değerleri geçersiz.", "bad");
+  const k = a / b;
+  S.cues.forEach(c => { c.s = Math.round(c.s * k); c.e = Math.round(c.e * k); });
+  renderCues($("#edList"), true); autosave();
+  toast("FPS dönüşümü uygulandı (×" + k.toFixed(4) + ").", "ok");
+};
+$("#btnApplyAnchor").onclick = () => {
+  if (S.cues.length < 2) return;
+  const t1 = tc2ms($("#anchor1").value), t2 = tc2ms($("#anchor2").value);
+  if (!t1 && !t2) return toast("İki zaman da gerekli.", "bad");
+  const o1 = S.cues[0].s, o2 = S.cues[S.cues.length - 1].s;
+  if (o2 === o1) return;
+  const k = (t2 - t1) / (o2 - o1);
+  S.cues.forEach(c => {
+    const d = c.e - c.s;
+    c.s = Math.round(t1 + (c.s - o1) * k);
+    c.e = Math.round(c.s + d * k);
+  });
+  renderCues($("#edList"), true); autosave();
+  toast("Hizalandı (×" + k.toFixed(4) + ").", "ok");
+};
+
+/* ===================== AYARLAR ===================== */
+function bindRange(id, key, fmt, after) {
+  const n = $(id), v = $(id + "V");
+  if (!n) return;
+  const upd = () => {
+    CFG[key] = key === "size" || key === "weight" || key === "bottom" || key === "width" || key === "side" ||
+      key === "bg" || key === "enScale" || key === "enOp" || key === "gap" || key === "batch" || key === "ctx"
+      ? Math.round(+n.value) : +n.value;
+    if (v) v.textContent = fmt ? fmt(CFG[key]) : CFG[key];
+    saveCfg(); applyStyle(); if (after) after();
+  };
+  n.addEventListener("input", upd);
+  n._upd = () => { n.value = CFG[key]; if (v) v.textContent = fmt ? fmt(CFG[key]) : CFG[key]; };
+}
+function bindSw(id, key, after) {
+  const n = $(id); if (!n) return;
+  n.onclick = () => { CFG[key] = !CFG[key]; n.classList.toggle("on", CFG[key]); saveCfg(); applyStyle(); if (after) after(); };
+  n._upd = () => n.classList.toggle("on", !!CFG[key]);
+}
+function bindSeg(id, key, after) {
+  const n = $(id); if (!n) return;
+  n.onclick = e => {
+    const b = e.target.closest("button[data-v]"); if (!b) return;
+    CFG[key] = isNaN(+b.dataset.v) || key === "tone" || key === "engine" || key === "pos" || key === "align" || key === "order"
+      ? b.dataset.v : +b.dataset.v;
+    $$("button", n).forEach(x => x.classList.toggle("on", x === b));
+    saveCfg(); applyStyle(); if (after) after();
+  };
+  n._upd = () => $$("button", n).forEach(x => x.classList.toggle("on", String(x.dataset.v) === String(CFG[key])));
+}
+function bindVal(id, key, after) {
+  const n = $(id); if (!n) return;
+  n.addEventListener("input", () => { CFG[key] = n.value; saveCfg(); applyStyle(); if (after) after(); });
+  n._upd = () => { n.value = CFG[key]; };
+}
+
+bindVal("#stFont", "font");
+bindRange("#stSize", "size", v => v + " px");
+bindRange("#stWeight", "weight");
+bindRange("#stLine", "line", v => (+v).toFixed(2));
+bindRange("#stTrack", "track", v => (+v).toFixed(1) + " px");
+bindVal("#stColor", "color");
+bindVal("#stStrokeColor", "strokeColor");
+bindRange("#stStroke", "stroke", v => v + " px");
+bindRange("#stBg", "bg", v => "%" + v);
+bindSw("#stShadow", "shadow");
+bindSeg("#stPos", "pos");
+bindRange("#stBottom", "bottom", v => "%" + v);
+bindRange("#stWidth", "width", v => "%" + v);
+bindRange("#stSide", "side", v => "%" + v);
+bindSeg("#stAlign", "align");
+bindSw("#stSafe", "safe");
+bindSw("#stShowEn", "showEn", () => $("#btnSubsOn").classList.toggle("on", CFG.showEn));
+bindSeg("#stOrder", "order");
+bindRange("#stEnScale", "enScale", v => "%" + v);
+bindRange("#stEnOp", "enOp", v => "%" + v);
+bindVal("#stEnColor", "enColor");
+bindRange("#stGap", "gap", v => v + " px");
+bindSeg("#stEngine", "engine", () => { $("#aiBox").style.display = CFG.engine === "ai" ? "" : "none"; engineNote(); });
+bindVal("#stProvider", "provider", () => {
+  if (!CFG.model || Object.values(DEF_MODEL).includes(CFG.model)) {
+    CFG.model = DEF_MODEL[CFG.provider] || "";
+    $("#stModel").value = CFG.model; saveCfg();
+  }
+  engineNote();
+});
+bindVal("#stModel", "model", engineNote);
+bindVal("#stKey", "key", engineNote);
+bindVal("#stBase", "base");
+bindRange("#stBatch", "batch", v => v + " satır");
+bindRange("#stCtx", "ctx", v => v + " satır");
+bindSeg("#stHard", "hard", () => { buildDict(); hardNote(); });
+bindSw("#stMask", "mask");
+bindSeg("#stTone", "tone");
+bindSw("#stAuto", "auto");
+
+function hardNote() {
+  const n = ["Küfür ve argo yumuşatılır; herkese uygun dil.",
+    "Doğal konuşma dili; küfür ölçülü ama gerçek karşılığıyla.",
+    "Sokak ağzı; küfür ve argo olduğu gibi çevrilir, yumuşatılmaz.",
+    "Hiçbir yumuşatma yok; en sert ve doğrudan karşılık."][clamp(CFG.hard | 0, 0, 3)];
+  $("#hardNote").textContent = n;
+}
+function engineNote() {
+  const t = CFG.engine === "fast"
+    ? "Hızlı motor: anahtar gerekmez, internet üzerinden sözcük bazlı çeviri yapar; sokak ağzı sözlüğü yine uygulanır."
+    : (CFG.key ? "Hazır: " + (CFG.model || DEF_MODEL[CFG.provider]) + " kullanılacak." : "API anahtarı gerekli — Ayarlar → Çeviri motoru.");
+  const n = $("#engineNote"); if (n) n.textContent = t;
+}
+$("#btnTestKey").onclick = async () => {
+  const b = $("#btnTestKey");
+  b.innerHTML = '<span class="spin"></span> Deneniyor';
+  try {
+    const r = await aiCall("Sadece JSON döndür.", 'Bu cümleyi Türkçeye çevir ve {"1":"..."} biçiminde döndür: 1. Get out of here.');
+    const o = parseJSONish(r);
+    toast(o ? "Bağlantı tamam: " + (o["1"] || "").slice(0, 40) : "Yanıt geldi ama okunamadı.", o ? "ok" : "bad");
+  } catch (e) { toast(e.message, "bad"); }
+  b.textContent = "Bağlantıyı test et";
+};
+
+/* ---------- kendi sözlüğüm ---------- */
+function renderDict() {
+  const box = $("#dictList");
+  box.innerHTML = "";
+  (CFG.dict || []).forEach((d, i) => {
+    const row = el("div", "dictRow");
+    row.innerHTML = '<input type="text" value="' + esc(d.en) + '" placeholder="İngilizce">' +
+      '<input type="text" value="' + esc(d.tr) + '" placeholder="Türkçe karşılığı">' +
+      '<button class="iconb" style="width:34px;height:40px" title="Sil">✕</button>';
+    const [a, b] = $$("input", row);
+    a.oninput = () => { CFG.dict[i].en = a.value; saveCfg(); buildDict(); };
+    b.oninput = () => { CFG.dict[i].tr = b.value; saveCfg(); buildDict(); };
+    $("button", row).onclick = () => { CFG.dict.splice(i, 1); saveCfg(); buildDict(); renderDict(); };
+    box.appendChild(row);
+  });
+  $("#dictCount").textContent = (CFG.dict || []).length;
+}
+$("#btnDictAdd").onclick = () => { CFG.dict = CFG.dict || []; CFG.dict.push({ en: "", tr: "" }); saveCfg(); renderDict(); };
+$("#btnDictShow").onclick = () => {
+  const rows = SLANG.map(([en, tr]) => '<tr><td style="padding:5px 10px 5px 0;color:#9aa3bd">' + esc(en.split("|")[0]) +
+    '</td><td style="padding:5px 0">' + esc(tr.split("|")[clamp(CFG.hard | 0, 0, 3)]) + '</td></tr>').join("");
+  modal('<h2>Yerleşik sözlük</h2><p class="hint">Seçili sertlik seviyesindeki karşılıklar. Değiştirmek için "Kendi sözlüğüm"e aynı kelimeyi ekle.</p>' +
+    '<div style="max-height:52vh;overflow:auto"><table style="width:100%;font-size:13.5px;border-collapse:collapse">' + rows + '</table></div>' +
+    '<div class="row" style="margin-top:14px"><button class="btn" onclick="closeModal()">Kapat</button></div>');
+};
+
+function syncSettingsUI() {
+  $$("[id^=st]").forEach(n => { if (n._upd) n._upd(); });
+  ["#stPos", "#stAlign", "#stOrder", "#stEngine", "#stHard", "#stTone"].forEach(id => { const n = $(id); if (n && n._upd) n._upd(); });
+  $("#aiBox").style.display = CFG.engine === "ai" ? "" : "none";
+  $("#btnSubsOn").classList.toggle("on", CFG.showEn);
+  hardNote(); engineNote(); renderDict();
+}
+
+/* ===================== OYUN MODU ===================== */
+$("#btnGameTr").onclick = async () => {
+  const t = $("#gamePaste").value.trim();
+  if (!t) return;
+  const b = $("#btnGameTr");
+  b.innerHTML = '<span class="spin"></span> Çeviriliyor';
+  try {
+    let out;
+    if (CFG.engine === "fast") out = await fastOne(t, CFG.src, CFG.tgt);
+    else {
+      const lines = t.split("\n").filter(x => x.trim());
+      const raw = await aiCall(sysPrompt(CFG.src, CFG.tgt), userPrompt(lines.map((x, i) => ({ n: i + 1, t: x, i })), [], []));
+      const o = parseJSONish(raw) || {};
+      out = lines.map((_, i) => o[String(i + 1)] || "").join("\n").trim();
+    }
+    $("#gameOutTr").textContent = out || "—";
+    $("#gameOutEn").textContent = t;
+  } catch (e) { toast(e.message, "bad"); }
+  b.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>Çevir';
+};
+$("#btnGameClear").onclick = () => { $("#gamePaste").value = ""; $("#gameOutTr").textContent = "—"; $("#gameOutEn").textContent = ""; };
+
+let gTimer = null, gT0 = 0, gBase = 0, gRunning = false;
+function gNow() { return gRunning ? gBase + (Date.now() - gT0) : gBase; }
+function gTick() {
+  const ms = gNow();
+  $("#gTime").textContent = ms2short(ms);
+  const i = (() => {
+    const off = S.offset || 0;
+    for (let k = 0; k < S.cues.length; k++) { const c = S.cues[k]; if (ms >= c.s + off && ms <= c.e + off) return k; }
+    return -1;
+  })();
+  const c = i >= 0 ? S.cues[i] : null;
+  $("#gTR").textContent = c ? (c.tr || c.t) : "";
+  $("#gEN").textContent = c && CFG.showEn && c.tr ? c.t : "";
+  $("#gInfo").textContent = c ? "#" + (i + 1) + " / " + S.cues.length : S.cues.length + " satır hazır";
+}
+$("#btnOpenOverlay").onclick = () => {
+  if (!S.cues.length) return toast("Önce altyazı yükle.", "bad");
+  $("#gOverlay").classList.add("on");
+  gBase = 0; gRunning = false; $("#gPlay").textContent = "Başlat";
+  scaleSubs(); gTick();
+  clearInterval(gTimer); gTimer = setInterval(gTick, 120);
+};
+$("#gClose").onclick = () => { $("#gOverlay").classList.remove("on"); clearInterval(gTimer); gRunning = false; };
+$("#gPlay").onclick = () => {
+  gRunning = !gRunning;
+  if (gRunning) gT0 = Date.now();
+  else gBase = gNow();
+  $("#gPlay").textContent = gRunning ? "Duraklat" : "Başlat";
+};
+$("#gPrev").onclick = () => { const i = Math.max(0, findIdx(gNow()) - 1); gBase = S.cues[i] ? S.cues[i].s : 0; gT0 = Date.now(); gTick(); };
+$("#gNext").onclick = () => { const i = Math.min(S.cues.length - 1, findIdx(gNow()) + 1); gBase = S.cues[i] ? S.cues[i].s : 0; gT0 = Date.now(); gTick(); };
+$("#btnChroma").onclick = () => { $("#gOverlay").classList.toggle("chroma"); };
+function findIdx(ms) {
+  let best = 0;
+  for (let i = 0; i < S.cues.length; i++) { if (S.cues[i].s <= ms) best = i; else break; }
+  return best;
+}
+
+/* ===================== KLAVYE ===================== */
+document.addEventListener("keydown", e => {
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return;
+  if (e.key === "Escape") { $("#gOverlay").classList.remove("on"); closeModal(); return; }
+  if (e.code === "Space") { e.preventDefault(); if (vid.src) (vid.paused ? vid.play() : vid.pause()); else $("#gPlay").click(); }
+  else if (e.key === "ArrowLeft" && vid.src) vid.currentTime = Math.max(0, vid.currentTime - 5);
+  else if (e.key === "ArrowRight" && vid.src) vid.currentTime += 5;
+  else if (e.key === "ArrowUp") { e.preventDefault(); if (S.sel > 0) { selectCue(S.sel - 1); if (vid.src) vid.currentTime = S.cues[S.sel].s / 1000; paintSubs(true); } }
+  else if (e.key === "ArrowDown") { e.preventDefault(); if (S.sel < S.cues.length - 1) { selectCue(S.sel + 1); if (vid.src) vid.currentTime = S.cues[S.sel].s / 1000; paintSubs(true); } }
+  else if (e.key === ",") setOff(S.offset - 100);
+  else if (e.key === ".") setOff(S.offset + 100);
+  else if (e.key.toLowerCase() === "e") { CFG.showEn = !CFG.showEn; saveCfg(); syncSettingsUI(); paintSubs(true); }
+});
+
+/* ===================== BAŞLANGIÇ ===================== */
+function fillLangs() {
+  const a = $("#srcLang"), b = $("#tgtLang");
+  a.innerHTML = b.innerHTML = "";
+  for (const [c, n] of LANGS) {
+    a.appendChild(el("option", "", n)).value = c;
+    b.appendChild(el("option", "", n)).value = c;
+  }
+  a.value = CFG.src; b.value = CFG.tgt;
+  a.onchange = () => { CFG.src = a.value; saveCfg(); };
+  b.onchange = () => { CFG.tgt = b.value; saveCfg(); };
+}
+$("#btnSwap").onclick = () => {
+  const t = CFG.src; CFG.src = CFG.tgt; CFG.tgt = t;
+  $("#srcLang").value = CFG.src; $("#tgtLang").value = CFG.tgt;
+  saveCfg(); toast(LANGNAME[CFG.src] + " → " + LANGNAME[CFG.tgt]);
+};
+$("#btnTranslate").onclick = translateAll;
+$("#btnStopTr").onclick = () => { S.stop = true; toast("Durduruluyor..."); };
+$("#btnRetryFails").onclick = retryFailed;
+
+function boot() {
+  fillLangs();
+  applyStyle();
+  syncSettingsUI();
+  renderProjects();
+  renderCues($("#trList"), false);
+  renderCues($("#edList"), true);
+  setPlayIcon(false);
+  const h = (location.hash || "").replace("#", "");
+  go(VIEWS.includes(h) ? h : "home");
+  try {
+    const last = readProjects()[0];
+    if (last && last.cues && last.cues.length) {
+      S.cues = last.cues.map(c => ({ s: +c.s, e: +c.e, t: c.t || "", tr: c.tr || "", flag: !!c.flag }));
+      S.name = last.name; S.kind = last.kind || "Film"; S.projId = last.id; S.sel = 0;
+      $("#btnTranslate").disabled = false;
+      $("#fileInfo").textContent = "Son çalışma: " + S.name + " · " + S.cues.length + " satır";
+      renderCues($("#trList"), false); renderCues($("#edList"), true); selectCue(0); paintSubs(true);
+    }
+  } catch (e) { }
+  setInterval(() => { if (!vid.src) paintSubs(); }, 400);
+  window.addEventListener("beforeunload", () => { if (S.cues.length && CFG.auto) saveProject(true); });
+}
+boot();
+</script>
+</body>
+</html>
