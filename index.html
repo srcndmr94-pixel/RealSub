@@ -239,6 +239,31 @@ input[type=color]{width:52px;height:42px;padding:3px;border-radius:12px;backgrou
 .gameOverlay.chroma .gbody{background:#00b140}
 .gameOverlay .gsubs{width:100%;text-align:center;padding:0 5%}
 
+
+/* ---------- EKRAN ÇEVİRİSİ ---------- */
+.selWrap{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  background:#05070e;touch-action:none;cursor:crosshair;user-select:none}
+.selWrap video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+.noShare{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted2);font-size:14px;
+  background:radial-gradient(70% 80% at 50% 45%,#171a2c,#07090f);pointer-events:none}
+.selWrap.live .noShare{display:none}
+.selBox{position:absolute;border:2px solid var(--acc2);background:rgba(124,108,255,.16);border-radius:4px;
+  display:none;pointer-events:none;box-shadow:0 0 0 9999px rgba(3,5,10,.45)}
+.selBox.on{display:block}
+.selBox::after{content:"Altyazı alanı";position:absolute;top:-22px;left:0;font-size:11px;font-weight:700;
+  color:#c3bcff;background:rgba(91,77,245,.9);padding:2px 7px;border-radius:6px;white-space:nowrap}
+.liveBox{min-height:150px;border-radius:16px;border:1px solid var(--line);display:grid;place-items:center;
+  padding:22px 18px;background:linear-gradient(160deg,#141828,#0a0c16)}
+#liveLayer{--sSize:30px}
+.scanList{max-height:min(44vh,380px);overflow:auto}
+.scanRow{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.scanRow:last-child{border-bottom:0}
+.scanRow .tr{font-weight:600}
+.scanRow .en{font-size:12.5px;color:var(--muted2);margin-top:2px}
+.scanRow .tm{font-size:11px;color:#5b647f;font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#49506a;margin-right:7px}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(47,191,113,.18)}
+.dot.busy{background:var(--warn)}
 /* ---------- MISC ---------- */
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,24px);z-index:120;padding:13px 20px;border-radius:14px;
   background:#1c2134;border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.5);opacity:0;transition:.22s;
@@ -303,6 +328,7 @@ body > #playerDock{display:none}
     <div class="brand"><span class="mark"><svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7z"/></svg></span><b>Real<span>Sub</span></b></div>
     <button class="navbtn on" data-go="home"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/><path d="M9.5 20v-6h5v6"/></svg>Ana Sayfa</button>
     <button class="navbtn" data-go="tr"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>Altyazı Çevirisi</button>
+    <button class="navbtn" data-go="screen"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 20h8M12 17v3"/><path d="M6.5 13.5h7"/></svg>Ekran Çevirisi</button>
     <button class="navbtn" data-go="edit"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M14.5 6.5l3 3"/></svg>Altyazı Düzenle</button>
     <button class="navbtn" data-go="sync"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 3 10 3-8 2 3h5"/></svg>Senkronizasyon</button>
     <button class="navbtn" data-go="game"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18.5 14h.01"/></svg>Oyun Modu</button>
@@ -580,6 +606,78 @@ body > #playerDock{display:none}
       </div>
     </section>
 
+    <!-- ============ EKRAN ÇEVİRİSİ ============ -->
+    <section class="view" id="v-screen">
+      <h1 class="big">Ekran <span>çevirisi</span></h1>
+      <p class="sub">Ekranda oynayan videonun altyazısını canlı okur, Türkçesini üstte kalan pencerede gösterir. Dosya gerekmez.</p>
+      <p class="hint" style="margin:-14px 0 20px;max-width:62ch">Bilgisayarda Chrome/Edge ile çalışır — Android tarayıcıları ekran paylaşımını desteklemez. Netflix, Disney+ gibi korumalı yayınlarda kare siyah gelebilir; yerel oynatıcı, YouTube ve oyun pencerelerinde sorun olmaz.</p>
+
+      <div class="work">
+        <div>
+          <div class="card">
+            <h3>1. Ekranı paylaş</h3>
+            <p class="hint" style="margin-top:0">Oynatıcı penceresini ya da sekmeyi seç. Tüm ekranı da paylaşabilirsin.</p>
+            <div class="row">
+              <button class="btn p" id="btnShare"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 20h8M12 17v3"/></svg>Ekranı paylaş</button>
+              <button class="btn sm" id="btnShareStop" style="display:none">Paylaşımı durdur</button>
+            </div>
+
+            <h3 style="margin-top:22px">2. Altyazı alanını seç</h3>
+            <p class="hint" style="margin-top:0">Görüntünün üstünde, İngilizce altyazının çıktığı yeri parmağınla/fareyle sürükleyerek çerçevele.</p>
+            <div class="selWrap" id="selWrap">
+              <video id="shareVid" playsinline muted></video>
+              <div class="noShare" id="noShare">Henüz ekran paylaşılmadı</div>
+              <div class="selBox" id="selBox"></div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn sm" data-preset="bottom">Alt şerit</button>
+              <button class="btn sm" data-preset="lower">Alt yarı</button>
+              <button class="btn sm" data-preset="full">Tam ekran</button>
+              <span class="hint" style="margin:0" id="selInfo">Alan seçilmedi</span>
+            </div>
+
+            <h3 style="margin-top:22px">3. Okumayı başlat</h3>
+            <div class="row">
+              <button class="btn p" id="btnScanStart" disabled><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor" stroke="none"/></svg>Başlat</button>
+              <button class="btn" id="btnScanStop" style="display:none">Durdur</button>
+              <button class="btn" id="btnPip"><svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><rect x="12" y="11" width="8" height="6" rx="1.5"/></svg>Üstte kalan pencere</button>
+            </div>
+            <div class="hint" id="scanStat">Hazır değil.</div>
+
+            <div class="sep"></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Kontrol sıklığı</label><input type="range" id="scanInt" min="300" max="3000" step="100"></div><span class="v" id="scanIntV"></span></div>
+            <div class="fieldrow"><div><label class="lbl" style="margin:0">Değişim eşiği</label><input type="range" id="scanSens" min="2" max="40" step="1"></div><span class="v" id="scanSensV"></span></div>
+            <p class="hint">Altyazı değişmediği sürece istek gönderilmez. <b>Düşük eşik</b> küçük değişimi bile yakalar ama boşuna istek gidebilir; satır atlanıyorsa eşiği düşür, durmadan istek gidiyorsa yükselt.</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3>Canlı çeviri</h3>
+            <div class="liveBox" id="liveBox">
+              <div class="subLayer" id="liveLayer" style="position:static;padding:0">
+                <div class="subLine tr" id="liveTR">—</div>
+                <div class="subLine en" id="liveEN"></div>
+              </div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn sm" id="btnChroma2">Yeşil ekran katmanı</button>
+              <button class="btn sm" id="btnScanSrt">Çıkanları .srt yap</button>
+              <button class="btn sm" id="btnScanClear">Listeyi temizle</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:18px">
+            <div class="row" style="justify-content:space-between;margin-bottom:10px">
+              <h3 style="margin:0">Okunanlar <span class="badge" id="scanCount">0</span></h3>
+              <span class="hint" style="margin:0" id="scanCost"></span>
+            </div>
+            <div id="scanList" class="scanList"><div class="empty" style="border:0">Henüz bir şey okunmadı.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ AYARLAR ============ -->
     <section class="view" id="v-set">
       <h1 class="big">Ayar<span>lar</span></h1>
@@ -737,6 +835,7 @@ body > #playerDock{display:none}
 <nav class="tabbar">
   <button data-go="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/></svg>Ana Sayfa</button>
   <button data-go="tr"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>Çeviri</button>
+  <button data-go="screen"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 20h8"/></svg>Ekran</button>
   <button data-go="edit"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg>Düzenle</button>
   <button data-go="sync"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-5 3 10 3-8 2 3h5"/></svg>Senkron</button>
   <button data-go="game"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3"/></svg>Oyun</button>
@@ -869,6 +968,8 @@ const DEF = {
   batch: 15, ctx: 3,
   hard: 2, mask: false, tone: "street",
   auto: true, dict: [],
+  region: { x: 0.08, y: 0.72, w: 0.84, h: 0.22 },
+  scanInt: 700, scanSens: 8,
   src: "en", tgt: "tr"
 };
 const LS_SET = "realsub.settings.v1";
@@ -900,7 +1001,7 @@ const S = {
 };
 
 /* ---------- görünüm yönlendirme ---------- */
-const VIEWS = ["home", "tr", "edit", "sync", "game", "set"];
+const VIEWS = ["home", "tr", "screen", "edit", "sync", "game", "set"];
 let curView = "home";
 function go(v) {
   if (!VIEWS.includes(v)) v = "home";
@@ -1903,6 +2004,340 @@ $("#btnWipe").onclick = () => {
 </script>
 <script>
 "use strict";
+/* ===================================================================
+   EKRAN ÇEVİRİSİ — ekranı paylaş, altyazı alanını seç, canlı oku ve çevir
+   =================================================================== */
+
+const shareVid = $("#shareVid"), selWrap = $("#selWrap"), selBox = $("#selBox");
+const capCan = document.createElement("canvas"), capCtx = capCan.getContext("2d", { willReadFrequently: true });
+const sigCan = document.createElement("canvas"), sigCtx = sigCan.getContext("2d", { willReadFrequently: true });
+sigCan.width = 96; sigCan.height = 26;
+
+let shareStream = null, scanning = false, scanTimer = null;
+let prevSig = null, changed = false, quiet = 0, busy = false, backoff = 0;
+let lastEn = "", reqCount = 0, scanT0 = 0;
+const SCAN = [];
+let pipWin = null, pipTR = null, pipEN = null;
+
+/* ---------- ekran paylaşımı ---------- */
+$("#btnShare").onclick = async () => {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia)
+    return toast("Bu tarayıcı ekran paylaşımını desteklemiyor (Android Chrome desteklemez).", "bad");
+  try {
+    shareStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: 5, max: 15 } }, audio: false
+    });
+    shareVid.srcObject = shareStream;
+    await shareVid.play().catch(() => { });
+    selWrap.classList.add("live");
+    $("#btnShareStop").style.display = "";
+    $("#btnScanStart").disabled = false;
+    drawSel();
+    stat("Paylaşım açık. Altyazı alanını seç, sonra Başlat'a bas.");
+    shareStream.getVideoTracks()[0].addEventListener("ended", stopShare);
+  } catch (e) {
+    if (e && e.name === "NotAllowedError") toast("Paylaşım iptal edildi.");
+    else toast("Ekran paylaşılamadı: " + (e && e.message ? e.message : e), "bad");
+  }
+};
+function stopShare() {
+  stopScan();
+  if (shareStream) shareStream.getTracks().forEach(t => t.stop());
+  shareStream = null;
+  shareVid.srcObject = null;
+  selWrap.classList.remove("live");
+  $("#btnShareStop").style.display = "none";
+  $("#btnScanStart").disabled = true;
+  stat("Paylaşım kapalı.");
+}
+$("#btnShareStop").onclick = stopShare;
+function stat(t, kind) {
+  const d = '<span class="dot' + (kind ? " " + kind : "") + '"></span>';
+  $("#scanStat").innerHTML = d + esc(t);
+}
+
+/* ---------- alan seçimi ---------- */
+function videoRect() {
+  // <video object-fit:contain> içinde görüntünün gerçek yerleşimi
+  const w = selWrap.clientWidth, h = selWrap.clientHeight;
+  const vw = shareVid.videoWidth || 16, vh = shareVid.videoHeight || 9;
+  const s = Math.min(w / vw, h / vh);
+  const dw = vw * s, dh = vh * s;
+  return { left: (w - dw) / 2, top: (h - dh) / 2, w: dw, h: dh };
+}
+function drawSel() {
+  const r = CFG.region;
+  if (!r || !(r.w > 0)) { selBox.classList.remove("on"); return; }
+  const v = videoRect();
+  selBox.style.left = (v.left + r.x * v.w) + "px";
+  selBox.style.top = (v.top + r.y * v.h) + "px";
+  selBox.style.width = (r.w * v.w) + "px";
+  selBox.style.height = (r.h * v.h) + "px";
+  selBox.classList.add("on");
+  $("#selInfo").textContent = "Alan: %" + Math.round(r.w * 100) + " genişlik, üstten %" + Math.round(r.y * 100);
+}
+window.addEventListener("resize", drawSel);
+let dragging = false, dx0 = 0, dy0 = 0;
+selWrap.addEventListener("pointerdown", e => {
+  if (!shareStream) return;
+  const b = selWrap.getBoundingClientRect();
+  dragging = true; dx0 = e.clientX - b.left; dy0 = e.clientY - b.top;
+  selWrap.setPointerCapture(e.pointerId);
+});
+selWrap.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  const b = selWrap.getBoundingClientRect(), v = videoRect();
+  const x1 = e.clientX - b.left, y1 = e.clientY - b.top;
+  const L = Math.min(dx0, x1), T = Math.min(dy0, y1), W = Math.abs(x1 - dx0), H = Math.abs(y1 - dy0);
+  CFG.region = {
+    x: clamp((L - v.left) / v.w, 0, 1), y: clamp((T - v.top) / v.h, 0, 1),
+    w: clamp(W / v.w, 0.02, 1), h: clamp(H / v.h, 0.02, 1)
+  };
+  drawSel();
+});
+selWrap.addEventListener("pointerup", () => {
+  if (!dragging) return;
+  dragging = false; prevSig = null; saveCfg();
+});
+$$("[data-preset]").forEach(b => b.onclick = () => {
+  const p = b.dataset.preset;
+  CFG.region = p === "full" ? { x: 0, y: 0, w: 1, h: 1 }
+    : p === "lower" ? { x: 0.04, y: 0.55, w: 0.92, h: 0.42 }
+      : { x: 0.06, y: 0.74, w: 0.88, h: 0.22 };
+  prevSig = null; saveCfg(); drawSel();
+});
+
+/* ---------- kare imzası (değişim algılama) ---------- */
+function srcRect() {
+  const vw = shareVid.videoWidth, vh = shareVid.videoHeight;
+  if (!vw || !vh) return null;
+  const r = CFG.region;
+  return { sx: r.x * vw, sy: r.y * vh, sw: Math.max(8, r.w * vw), sh: Math.max(8, r.h * vh) };
+}
+function signature() {
+  const r = srcRect(); if (!r) return null;
+  try { sigCtx.drawImage(shareVid, r.sx, r.sy, r.sw, r.sh, 0, 0, sigCan.width, sigCan.height); }
+  catch (e) { return null; }
+  const d = sigCtx.getImageData(0, 0, sigCan.width, sigCan.height).data;
+  const n = sigCan.width * sigCan.height, g = new Uint8Array(n);
+  let bright = 0;
+  for (let i = 0; i < n; i++) {
+    const v = (d[i * 4] * 3 + d[i * 4 + 1] * 6 + d[i * 4 + 2]) / 10;
+    g[i] = v;
+    if (v > 150) bright++;
+  }
+  g.bright = bright;
+  return g;
+}
+/* Fark yalnızca parlak (yazı) hücrelerde ölçülür; karanlık arka plandaki
+   hareket tetiklemesin diye iki karede de koyu olan hücreler sayılmaz. */
+function sigDiff(a, b) {
+  let d = 0;
+  for (let i = 0; i < a.length; i++) {
+    if ((a[i] > 130 || b[i] > 130) && Math.abs(a[i] - b[i]) > 45) d++;
+  }
+  return d;   // değişen yazı hücresi sayısı
+}
+function isBlank(a) { return a.bright < a.length * 0.0015; }
+function grabJPEG() {
+  const r = srcRect(); if (!r) return null;
+  const maxW = 900, sc = Math.min(1, maxW / r.sw);
+  capCan.width = Math.max(32, Math.round(r.sw * sc));
+  capCan.height = Math.max(16, Math.round(r.sh * sc));
+  capCtx.drawImage(shareVid, r.sx, r.sy, r.sw, r.sh, 0, 0, capCan.width, capCan.height);
+  return capCan.toDataURL("image/jpeg", 0.72);
+}
+
+/* ---------- görüntüden okuma + çeviri ---------- */
+function visionPrompt() {
+  const son = SCAN.slice(-2).map(x => "- " + x.en).join("\n");
+  const kural = [];
+  for (const d of DICT) if (d.user) kural.push(d.en + " = " + d.tr[0]);
+  return [
+    "Bu görüntü, oynayan bir videonun altyazı bölgesinin ekran görüntüsüdür.",
+    "Görüntüdeki altyazı metnini oku, sonra " + (LANGNAME[CFG.tgt] || "Türkçe") + " diline çevir.",
+    "",
+    "KURALLAR:",
+    "1. " + HARD_RULES[clamp(CFG.hard | 0, 0, 3)],
+    "2. " + (TONE_RULES[CFG.tone] || TONE_RULES.street),
+    "3. Kelimesi kelimesine değil, Türkçe konuşan biri nasıl söylerse öyle çevir.",
+    "4. Görüntüde altyazı yoksa, yazı seçilemiyorsa ya da sadece arayüz/logo/saat/isim görünüyorsa iki alanı da boş bırak.",
+    "5. Oynatıcı düğmeleri, kanal adı, izlenme sayısı, menü yazıları altyazı değildir; onları alma.",
+    "6. Açıklama ekleme, sadece metni ve çevirisini ver.",
+    kural.length ? "7. ZORUNLU KARŞILIKLAR: " + kural.slice(0, 30).join(" ; ") : "",
+    son ? "\nÖNCEKİ REPLİKLER (bağlam):\n" + son : "",
+    "",
+    'ÇIKTI: sadece JSON. {"en":"görüntüdeki metin","tr":"çevirisi"}'
+  ].filter(Boolean).join("\n");
+}
+async function aiVision(dataUrl) {
+  const key = (CFG.key || "").trim();
+  const model = (CFG.model || DEF_MODEL[CFG.provider] || "").trim();
+  if (!key && CFG.provider !== "custom") throw new Error("API anahtarı yok (Ayarlar → Çeviri motoru).");
+  if (CFG.provider === "gemini") {
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) +
+      ":generateContent?key=" + encodeURIComponent(key);
+    const body = {
+      contents: [{ role: "user", parts: [{ text: visionPrompt() }, { inline_data: { mime_type: "image/jpeg", data: dataUrl.split(",")[1] } }] }],
+      generationConfig: { temperature: 0.6, responseMimeType: "application/json", maxOutputTokens: 800 },
+      safetySettings: ["HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT"]
+        .map(c => ({ category: c, threshold: "BLOCK_NONE" }))
+    };
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error((j.error && j.error.message) || ("Hata " + r.status)); e.code = r.status; throw e; }
+    const c = (j.candidates || [])[0];
+    return c ? ((c.content && c.content.parts) || []).map(p => p.text || "").join("") : "";
+  }
+  const url = endpointOf();
+  if (!url) throw new Error("Özel adres boş.");
+  const r = await fetch(url, {
+    method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+    body: JSON.stringify({
+      model, temperature: 0.6, max_tokens: 800,
+      messages: [{ role: "user", content: [{ type: "text", text: visionPrompt() }, { type: "image_url", image_url: { url: dataUrl } }] }],
+      response_format: { type: "json_object" }
+    })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error((j.error && j.error.message) || ("Hata " + r.status)); e.code = r.status; throw e; }
+  return (((j.choices || [])[0] || {}).message || {}).content || "";
+}
+
+/* ---------- canlı gösterim ---------- */
+function setLive(tr, en) {
+  $("#liveTR").textContent = tr || "—";
+  $("#liveEN").textContent = CFG.showEn ? (en || "") : "";
+  $("#liveEN").style.display = $("#liveEN").textContent ? "" : "none";
+  if (pipTR && pipWin && !pipWin.closed) {
+    pipTR.textContent = tr || "";
+    pipEN.textContent = CFG.showEn ? (en || "") : "";
+  }
+  if ($("#gOverlay").classList.contains("on")) {
+    $("#gTR").textContent = tr || "";
+    $("#gEN").textContent = CFG.showEn ? (en || "") : "";
+  }
+}
+function pushScan(en, tr) {
+  SCAN.push({ t: Date.now() - scanT0, en, tr });
+  const box = $("#scanList");
+  if (SCAN.length === 1) box.innerHTML = "";
+  const row = el("div", "scanRow",
+    '<div class="tm">' + ms2short(Date.now() - scanT0) + '</div>' +
+    '<div class="tr">' + esc(tr) + '</div><div class="en">' + esc(en) + '</div>');
+  box.insertBefore(row, box.firstChild);
+  while (box.children.length > 120) box.removeChild(box.lastChild);
+  $("#scanCount").textContent = SCAN.length;
+}
+
+/* ---------- tarama döngüsü ---------- */
+async function sendFrame() {
+  const img = grabJPEG(); if (!img) return;
+  busy = true; reqCount++;
+  $("#scanCost").textContent = reqCount + " istek";
+  stat("Okunuyor...", "busy");
+  try {
+    const raw = await aiVision(img);
+    const o = parseJSONish(raw) || {};
+    const en = String(o.en || "").trim(), tr = tidy(maskProfanity(String(o.tr || "").trim()));
+    if (en && tr && en !== lastEn) { lastEn = en; setLive(tr, en); pushScan(en, tr); }
+    else if (!en) setLive("", "");
+    stat(scanning ? "Dinlemede — altyazı değişince okuyor." : "Durdu.", scanning ? "on" : "");
+    backoff = 0;
+  } catch (e) {
+    if (e.code === 429) { backoff = 6; stat("Kota doldu, 5 saniye bekleniyor...", "busy"); }
+    else { stat("Hata: " + e.message, "busy"); backoff = 3; }
+  }
+  busy = false;
+}
+function tick() {
+  if (!scanning || !shareStream) return;
+  if (backoff > 0) { backoff--; return; }
+  const sig = signature(); if (!sig) return;
+  const blank = isBlank(sig);
+  if (prevSig) {
+    const d = sigDiff(sig, prevSig);
+    if (d > CFG.scanSens) { changed = true; quiet = 0; } else if (changed) quiet++;
+  }
+  prevSig = sig;
+  if (blank) { if (changed && quiet >= 1) { changed = false; lastEn = ""; setLive("", ""); } return; }
+  if (changed && quiet >= 1 && !busy) { changed = false; sendFrame(); }
+}
+function startScan() {
+  if (!shareStream) return toast("Önce ekranı paylaş.", "bad");
+  if (!CFG.key && CFG.provider !== "custom") return toast("Önce API anahtarını gir (Ayarlar).", "bad");
+  scanning = true; scanT0 = Date.now(); prevSig = null; changed = true; quiet = 1; lastEn = "";
+  $("#btnScanStart").style.display = "none";
+  $("#btnScanStop").style.display = "";
+  clearInterval(scanTimer);
+  scanTimer = setInterval(tick, clamp(CFG.scanInt | 0, 300, 3000));
+  stat("Dinlemede — altyazı değişince okuyor.", "on");
+}
+function stopScan() {
+  scanning = false;
+  clearInterval(scanTimer);
+  $("#btnScanStart").style.display = "";
+  $("#btnScanStop").style.display = "none";
+  stat(shareStream ? "Durdu." : "Paylaşım kapalı.");
+}
+$("#btnScanStart").onclick = startScan;
+$("#btnScanStop").onclick = stopScan;
+
+/* ---------- üstte kalan pencere ---------- */
+$("#btnPip").onclick = async () => {
+  const css = "body{margin:0;background:#000;color:#fff;font-family:" + CFG.font +
+    ";display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;padding:10px;gap:6px}" +
+    "#t{font-size:30px;font-weight:" + CFG.weight + ";line-height:1.25;text-shadow:0 2px 8px #000}" +
+    "#e{font-size:17px;color:" + CFG.enColor + ";opacity:" + (CFG.enOp / 100) + "}";
+  try {
+    if (window.documentPictureInPicture) {
+      pipWin = await documentPictureInPicture.requestWindow({ width: 680, height: 190 });
+    } else {
+      pipWin = window.open("", "realsub_pip", "width=680,height=190");
+      if (!pipWin) throw new Error("Pencere engellendi.");
+      toast("Tarayıcın 'hep üstte' pencereyi desteklemiyor; normal pencere açıldı.", "bad");
+    }
+    pipWin.document.body.innerHTML = '<div id="t"></div><div id="e"></div>';
+    const st = pipWin.document.createElement("style");
+    st.textContent = css;
+    pipWin.document.head.appendChild(st);
+    pipWin.document.title = "RealSub";
+    pipTR = pipWin.document.getElementById("t");
+    pipEN = pipWin.document.getElementById("e");
+    pipTR.textContent = $("#liveTR").textContent;
+    pipWin.addEventListener("pagehide", () => { pipWin = null; pipTR = null; pipEN = null; });
+  } catch (e) { toast("Pencere açılamadı: " + e.message, "bad"); }
+};
+$("#btnChroma2").onclick = () => {
+  $("#gOverlay").classList.add("on", "chroma");
+  scaleSubs();
+  setLive($("#liveTR").textContent, $("#liveEN").textContent);
+};
+
+/* ---------- okunanları altyazı dosyasına çevir ---------- */
+$("#btnScanSrt").onclick = () => {
+  if (!SCAN.length) return toast("Henüz bir şey okunmadı.", "bad");
+  S.cues = SCAN.map((x, i) => ({
+    s: x.t, e: (SCAN[i + 1] ? Math.max(x.t + 700, SCAN[i + 1].t - 80) : x.t + 2500),
+    t: x.en, tr: x.tr, flag: false
+  }));
+  S.name = "ekran-cevirisi.srt"; S.projId = null; S.sel = 0;
+  $("#btnTranslate").disabled = false;
+  renderCues($("#trList"), false); renderCues($("#edList"), true);
+  selectCue(0); saveProject(true);
+  go("edit");
+  toast(SCAN.length + " satır altyazıya dönüştü.", "ok");
+};
+$("#btnScanClear").onclick = () => {
+  SCAN.length = 0; reqCount = 0; lastEn = "";
+  $("#scanList").innerHTML = '<div class="empty" style="border:0">Henüz bir şey okunmadı.</div>';
+  $("#scanCount").textContent = "0"; $("#scanCost").textContent = "";
+  setLive("", "");
+};
+
+</script>
+<script>
+"use strict";
 /* ===================== DÜZENLEME ===================== */
 function curCue() { return S.cues[S.sel]; }
 $("#btnSaveChanges").onclick = () => {
@@ -2111,6 +2546,10 @@ bindSeg("#stHard", "hard", () => { buildDict(); hardNote(); });
 bindSw("#stMask", "mask");
 bindSeg("#stTone", "tone");
 bindSw("#stAuto", "auto");
+bindRange("#scanInt", "scanInt", v => v + " ms", () => {
+  if (typeof scanning !== "undefined" && scanning) { clearInterval(scanTimer); scanTimer = setInterval(tick, clamp(CFG.scanInt | 0, 300, 3000)); }
+});
+bindRange("#scanSens", "scanSens", v => v + " birim");
 
 function hardNote() {
   const n = ["Küfür ve argo yumuşatılır; herkese uygun dil.",
@@ -2165,6 +2604,7 @@ $("#btnDictShow").onclick = () => {
 function syncSettingsUI() {
   $$("[id^=st]").forEach(n => { if (n._upd) n._upd(); });
   ["#stPos", "#stAlign", "#stOrder", "#stEngine", "#stHard", "#stTone"].forEach(id => { const n = $(id); if (n && n._upd) n._upd(); });
+  ["#scanInt", "#scanSens"].forEach(id => { const n = $(id); if (n && n._upd) n._upd(); });
   $("#aiBox").style.display = CFG.engine === "ai" ? "" : "none";
   $("#btnSubsOn").classList.toggle("on", CFG.showEn);
   hardNote(); engineNote(); renderDict();
@@ -2286,6 +2726,7 @@ function boot() {
       renderCues($("#trList"), false); renderCues($("#edList"), true); selectCue(0); paintSubs(true);
     }
   } catch (e) { }
+  if (typeof drawSel === "function") drawSel();
   setInterval(() => { if (!vid.src) paintSubs(); }, 400);
   window.addEventListener("beforeunload", () => { if (S.cues.length && CFG.auto) saveProject(true); });
 }
